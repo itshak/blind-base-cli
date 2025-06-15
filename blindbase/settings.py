@@ -119,24 +119,28 @@ def _resolve_default_engine_path() -> str:
         base_dir = getattr(sys, "_MEIPASS", os.path.dirname(__file__))
         engine_root = os.path.join(base_dir, "engine")
         # Binaries are collected straight into "engine/" during bundling
-        if platform.system() == "Windows":
-            return os.path.join(engine_root, "stockfish.exe")
-        else:
-            # arm64 and x86_64 builds have respective names, try arm first then x86
-            preferred = os.path.join(engine_root, "stockfish")
-            fallback = os.path.join(engine_root, "stockfish_x86")
-            return preferred if os.path.exists(preferred) else fallback
+        system = platform.system()
+        if system == "Windows":
+            win_path = os.path.join(engine_root, "win", "stockfish.exe")
+            return win_path if os.path.exists(win_path) else "stockfish"
+        elif system == "Darwin":
+            is_arm = platform.machine() in {"arm64", "aarch64"}
+            filename = "stockfish" if is_arm else "stockfish_x86"
+            mac_path = os.path.join(engine_root, "mac", filename)
+            return mac_path if os.path.exists(mac_path) else "stockfish"
     else:
         base_dir = os.path.dirname(__file__)
         engine_root = os.path.join(base_dir, "engine")
 
     system = platform.system()
     if system == "Windows":
-        return os.path.join(engine_root, "win", "stockfish.exe")
+        win_path = os.path.join(engine_root, "win", "stockfish.exe")
+        return win_path if os.path.exists(win_path) else "stockfish"
     elif system == "Darwin":
         is_arm = platform.machine() in {"arm64", "aarch64"}
         filename = "stockfish" if is_arm else "stockfish_x86"
-        return os.path.join(engine_root, "mac", filename)
+        mac_path = os.path.join(engine_root, "mac", filename)
+        return mac_path if os.path.exists(mac_path) else "stockfish"
 
     # For any other OS, just expect stockfish in PATH as ultimate fallback
     return "stockfish"

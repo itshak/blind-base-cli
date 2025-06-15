@@ -22,6 +22,27 @@ blindbase play games.pgn        # open PGN browser
 
 Command list appears below the board; type `a` to start engine analysis, `t` to view Masters moves, `m` to save.
 
+### Install Stockfish (required for pip users)
+
+The PyPI wheel is lightweight and **does not include** the Stockfish engine.
+Install Stockfish once and make sure it is discoverable from the shell:
+
+• **macOS** – `brew install stockfish`
+
+• **Windows** – download `stockfish_15_x64_avx2.exe` (or the `..._noavx2.exe` if your CPU lacks AVX2) from the
+[official site](https://stockfishchess.org/download/) and place it somewhere in your `%PATH%`
+(e.g. `C:\Windows\System32`).
+
+• **Linux** – `sudo apt install stockfish` or your distro's package.
+
+Alternatively, pass an explicit path:
+
+```bash
+blindbase play games.pgn --engine /full/path/to/stockfish
+```
+
+The single-file executables (`blindbase_mac_arm64`, `blindbase.exe`, …) already contain the correct engine and do **not** need this step.
+
 ## Building from source
 
 ```bash

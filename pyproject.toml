@@ -39,7 +39,7 @@ build-backend = "setuptools.build_meta"
 include-package-data = true
 
 [tool.setuptools.package-data]
-"blindbase" = ["engine/*/*"]
+"blindbase" = [] # binaries excluded from wheel
 
 [tool.setuptools.packages.find]
 include = ["blindbase*"]
