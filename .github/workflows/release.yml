@@ -98,3 +98,21 @@ jobs:
             dist_release/blindbase_mac_arm64
             dist_release/blindbase_mac_x86_64
             dist_release/blindbase.exe
+
+  pypi-publish:
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: release # ← same as you typed on PyPI
+    permissions:
+      id-token: write # OIDC credential for PyPI
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: blindbase-pypi
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # no 'password:' line → OIDC trusted-publisher mode
