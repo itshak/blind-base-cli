@@ -1,6 +1,6 @@
 [project]
 name = "blindbase"
-version = "0.5.4"
+version = "0.5.5"
 description = "Accessible CLI chess study tool with Stockfish analysis and  Lichess integration."
 authors = [{name="Alexey Streltsov", email="iitshak@gmail.com"}]
 readme = "README.md"
@@ -44,3 +44,6 @@ include-package-data = false
 [tool.setuptools.packages.find]
 include = ["blindbase*"]
 exclude = ["packaging", "tests*", "blindbase.engine*"]
+
+[tool.setuptools.exclude-package-data]
+"blindbase" = ["engine/*"]
