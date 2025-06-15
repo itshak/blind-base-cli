@@ -109,10 +109,12 @@ def analysis_thread_refined(engine: chess.engine.SimpleEngine, board: chess.Boar
                     if shared_pv is not None and pv:
                         shared_pv[multipv_num] = pv[0]
                     if score.is_mate():
-                        mate_in_plies = score.pov(board.turn).mate()
-                        evaluation = f"M{abs(mate_in_plies)}" if mate_in_plies is not None else "Mate"
+                        mate_in_plies = score.pov(chess.WHITE).mate()
+                        evaluation = (
+                            f"M{abs(mate_in_plies)}" if mate_in_plies is not None else "Mate"
+                        )
                     else:
-                        cp_score = score.pov(board.turn).score(mate_score=10000)
+                        cp_score = score.pov(chess.WHITE).score(mate_score=10000)
                         evaluation = f"{cp_score / 100:.2f}" if cp_score is not None else "N/A"
                     latest_data_at_max_depth[multipv_num] = f"{evaluation} {pv_san}"
                 should_update_display_flag = False
