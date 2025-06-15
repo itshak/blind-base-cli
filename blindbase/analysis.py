@@ -24,7 +24,7 @@ __all__ = [
 def get_analysis_block_height(settings_manager) -> int:
     num_engine_lines = settings_manager.get("engine_lines_count")
     padding = settings_manager.get("analysis_block_padding")
-    return 1 + num_engine_lines + padding
+    return 2 + num_engine_lines + padding
 
 
 def clear_analysis_block_dynamic(settings_manager):
@@ -36,7 +36,7 @@ def clear_analysis_block_dynamic(settings_manager):
     sys.stdout.flush()
 
 
-def print_analysis_refined(depth: int, lines_data: List[str], settings_manager):
+def print_analysis_refined(depth: int, lines_data: List[str], settings_manager, engine_name: str = "Engine"):
     num_engine_display_lines = settings_manager.get("engine_lines_count")
     block_height = get_analysis_block_height(settings_manager)
     try:
@@ -44,6 +44,7 @@ def print_analysis_refined(depth: int, lines_data: List[str], settings_manager):
     except Exception:
         terminal_width = 80
     sys.stdout.write(f"\033[{block_height}A")
+    sys.stdout.write("\033[2K" + engine_name[:terminal_width] + "\n")
     depth_text = f"Depth: {depth}"
     sys.stdout.write("\033[2K" + depth_text[:terminal_width] + "\n")
     for i in range(num_engine_display_lines):
@@ -56,7 +57,7 @@ def print_analysis_refined(depth: int, lines_data: List[str], settings_manager):
             else full_line_text
         )
         sys.stdout.write("\033[2K" + line_to_print + "\n")
-    remaining_lines_to_fill = block_height - (1 + num_engine_display_lines)
+    remaining_lines_to_fill = block_height - (2 + num_engine_display_lines)
     for _ in range(remaining_lines_to_fill):
         sys.stdout.write("\033[2K\n")
     sys.stdout.flush()
@@ -73,7 +74,8 @@ def analysis_thread_refined(engine: chess.engine.SimpleEngine, board: chess.Boar
     latest_data_at_max_depth = {i: "" for i in range(1, num_engine_lines + 1)}
     max_depth_from_engine_info = 0
     last_display_update_time = time.time()
-    print_analysis_refined(displayed_depth, displayed_lines_content, settings_manager)
+    engine_name = engine.id.get('name', 'Engine') if hasattr(engine, 'id') else 'Engine'
+    print_analysis_refined(displayed_depth, displayed_lines_content, settings_manager, engine_name)
     try:
         with engine.analysis(board, multipv=num_engine_lines, limit=chess.engine.Limit(depth=None)) as analysis:
             for info in analysis:
@@ -136,7 +138,8 @@ def analysis_thread_refined(engine: chess.engine.SimpleEngine, board: chess.Boar
                     new_lines_to_show = potential_new_lines
                     current_time = time.time()
                     if current_time - last_display_update_time > 0.15:
-                        print_analysis_refined(new_depth_to_show, new_lines_to_show, settings_manager)
+                        engine_name = engine.id.get('name', 'Engine') if hasattr(engine, 'id') else 'Engine'
+                        print_analysis_refined(new_depth_to_show, new_lines_to_show, settings_manager, engine_name)
                         displayed_depth = new_depth_to_show
                         displayed_lines_content = new_lines_to_show[:]
                         last_display_update_time = current_time

@@ -599,6 +599,9 @@ def play_game(
             if board.is_game_over():
                 print(f"\033[2KGame over: {board.result()}")
                 lines_printed_this_iteration += 1
+            # Save core_lines_count before printing variations/footer
+            core_lines_count = lines_printed_this_iteration
+
             variations = navigator.show_variations()
             if variations:
                 print("\033[2K\n\033[2KAvailable moves/variations:")
@@ -616,6 +619,7 @@ def play_game(
                     latest_pgn = update_queue.get()
                     navigator.update_from_broadcast_pgn(latest_pgn, game_identifier)
             # Update the display_height for next refresh so we clear exactly what we printed
+            footer_clear_height = (lines_printed_this_iteration + 2) - core_lines_count
             display_height = lines_printed_this_iteration + 2  # cmds line + command prompt
             sys.stdout.flush()
             print(
@@ -649,10 +653,16 @@ def play_game(
             elif command.lower() == "a":
                 if not board.is_game_over():
                     analysis_block_h = get_analysis_block_height(settings_manager)
-                    print("\n" * (analysis_block_h + 1))
-                    sys.stdout.write(f"\033[{analysis_block_h + 1}A")
-                    print(f"\033[2KStarting engine analysis...")
-                    print("\033[2KEnter the number of the line to make a move on the board or enter 'b' to go back.")
+                    # Clear existing footer (variations/cmds) lines below board
+                    sys.stdout.write(f"\033[{footer_clear_height}A")
+                    for _ in range(footer_clear_height):
+                        sys.stdout.write("\033[2K\n")
+                    sys.stdout.write(f"\033[{footer_clear_height}A")
+
+                    # Reserve space for engine output below board
+                    print("\n" * analysis_block_h, end="")
+                    # Static instruction + prompt line
+                    print("Enter the line number to follow or 'b' to go back")
                     stop_event_analyze = threading.Event()
                     shared_pv: dict[int, chess.Move] = {}
                     analysis_thread_instance = threading.Thread(
