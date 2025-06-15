@@ -35,7 +35,7 @@ from blindbase.analysis import (
     print_analysis_refined,
     analysis_thread_refined,
 )
-from blindbase.ui.utils import clear_screen_and_prepare_for_new_content, UI_SCREEN_BUFFER_HEIGHT
+from blindbase.ui.utils import clear_screen_and_prepare_for_new_content
 
 # ---------------------------------------------------------------------------
 # Utility helpers that were previously top-level in the monolith

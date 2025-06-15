@@ -79,4 +79,6 @@ class SettingsManager:
             elif isinstance(default_value, bool):
                 value = bool(value)
         self.settings[key] = value
-        self.save_settings() 
+        self.save_settings()
+
+__all__ = ["SettingsManager"] 
