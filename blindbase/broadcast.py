@@ -46,12 +46,70 @@ class BroadcastManager:
     # ------------------------------------------------------------------
 
     def fetch_broadcasts(self) -> bool:
-        """Populate *self.broadcasts* with the list of official broadcasts."""
-        data = _safe_request_json(BROADCAST_API)
-        if not data:
+        """Populate *self.broadcasts* with the list of official broadcasts.
+
+        The endpoint returns Newline-Delimited JSON (NDJSON).  Each line after
+        the first may contain another JSON object; the *official* section we
+        need is found in the first object.
+        """
+        try:
+            resp = requests.get(BROADCAST_API, stream=True, timeout=5)
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            print(f"Error fetching broadcasts: {exc}")
             self.broadcasts = []
             return False
-        self.broadcasts = data.get("official", [])
+
+        broadcasts: List[dict] = []
+        raw_example: str | None = None
+        try:
+            for line in resp.iter_lines(decode_unicode=True):
+                if not line:
+                    continue
+                if raw_example is None:
+                    raw_example = line
+                try:
+                    broadcasts.append(json.loads(line))
+                except json.JSONDecodeError:
+                    print(f"Skipping unparsable line: {line[:80]}…")
+        except requests.RequestException as exc:
+            print(f"Stream error: {exc}")
+            self.broadcasts = []
+            return False
+
+        transformed: List[dict] = []
+        for obj in broadcasts:
+            if "tour" in obj and "rounds" in obj:
+                tour = obj["tour"]
+                b_id = tour.get("id")
+                name = tour.get("name")
+                # use first timestamp in dates list for start date, convert to ISO date
+                timestamps = tour.get("dates", [])
+                start_date = None
+                if timestamps:
+                    try:
+                        import datetime as _dt
+                        start_date = _dt.datetime.utcfromtimestamp(timestamps[0] / 1000).strftime("%Y-%m-%d")
+                    except Exception:
+                        start_date = str(timestamps[0])
+                transformed.append(
+                    {
+                        "id": b_id,
+                        "name": name,
+                        "startDate": start_date,
+                        "rounds": obj.get("rounds", []),
+                    }
+                )
+            elif "id" in obj and "name" in obj:
+                transformed.append(obj)
+
+        self.broadcasts = transformed
+
+        # Debug output (optional; comment out later)
+        #        if raw_example:
+        #            print("Debug: sample NDJSON line (truncated):", raw_example[:200])
+        #        if self.broadcasts:
+        #            print("Debug: first broadcast:", json.dumps(self.broadcasts[0], indent=2)[:400])
         return True
 
     def fetch_rounds(self, broadcast: dict) -> List[dict]:
@@ -59,7 +117,8 @@ class BroadcastManager:
         return broadcast.get("rounds", [])
 
     def fetch_games(self, round_id: str) -> List[chess.pgn.Game]:
-        url = f"{BROADCAST_API}/{round_id}.pgn"
+        # Correct endpoint is /broadcast/round/{roundId}.pgn
+        url = f"{BROADCAST_API}/round/{round_id}.pgn"
         try:
             response = requests.get(url, timeout=5)
             response.raise_for_status()
