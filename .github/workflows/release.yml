@@ -1,0 +1,71 @@
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  wheel:
+    name: Build wheel & sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build tool
+        run: python -m pip install --upgrade build
+      - name: Build
+        run: python -m build # creates dist/*.whl and dist/*.tar.gz
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: blindbase-pypi
+          path: dist/*
+
+  mac:
+    name: Build macOS arm64 & x86_64 binaries
+    runs-on: macos-14 # Apple Silicon runner
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Build both binaries
+        run: python packaging/build_macos.py
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: blindbase-mac
+          path: |
+            dist/blindbase_mac_arm64
+            dist/blindbase_mac_x86_64
+
+  windows:
+    name: Build Windows executable
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Build exe
+        run: python packaging/build_windows.py
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blindbase-win
+          path: dist/blindbase.exe

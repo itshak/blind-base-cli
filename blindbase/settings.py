@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Any, Dict
+import platform
 
 
 class SettingsManager:
@@ -18,7 +19,7 @@ class SettingsManager:
             "engine_lines_count": 3,
             "show_chessboard": True,
             "analysis_block_padding": 3,
-            "engine_path": "./stockfish",
+            "engine_path": _resolve_default_engine_path(),
             "pgn_file_directory": ".",
             "default_pgn_filename": "games.pgn",
             "games_per_page": 10,
@@ -45,6 +46,16 @@ class SettingsManager:
                                 self.settings[key] = bool(self.settings.get(key, value))
                             else:
                                 self.settings[key] = str(self.settings.get(key, value))
+                    # --- migration: update engine_path if user still has legacy ./stockfish ---
+                    current_engine = self.settings.get("engine_path", "./stockfish")
+                    resolved_default = _resolve_default_engine_path()
+                    if (
+                        current_engine in {"./stockfish", "stockfish"}
+                        or not os.path.exists(current_engine)
+                    ) and os.path.exists(resolved_default):
+                        self.settings["engine_path"] = resolved_default
+                        # Persist change for future runs
+                        # We don't call save_settings() here to avoid recursion; defer until after load.
             else:
                 self.settings = self.default_settings.copy()
                 self.save_settings()
@@ -53,6 +64,9 @@ class SettingsManager:
                 f"Warning: Error loading settings file '{self.settings_filename}': {e}. Using defaults."
             )
             self.settings = self.default_settings.copy()
+            self.save_settings()
+        else:
+            # ensure any migrated values are persisted
             self.save_settings()
 
     def save_settings(self) -> None:
@@ -80,5 +94,51 @@ class SettingsManager:
                 value = bool(value)
         self.settings[key] = value
         self.save_settings()
+
+# ---------------------------------------------------------------------------
+# Helper to determine packaged Stockfish binary
+# ---------------------------------------------------------------------------
+
+
+def _resolve_default_engine_path() -> str:
+    """Return the path to the Stockfish engine bundled with the package.
+
+    Works in three scenarios:
+    1. Normal `pip install` / editable mode (package files on disk).
+    2. Source tree checkout (running from repo).
+    3. PyInstaller one-file executable where files are unpacked to
+       ``sys._MEIPASS`` and ``sys.frozen`` is True.
+    """
+
+    import sys
+    import os
+
+    # When running under PyInstaller, non-Python data files live under _MEIPASS
+    base_dir: str
+    if getattr(sys, "frozen", False):  # PyInstaller sets this attr
+        base_dir = getattr(sys, "_MEIPASS", os.path.dirname(__file__))
+        engine_root = os.path.join(base_dir, "engine")
+        # Binaries are collected straight into "engine/" during bundling
+        if platform.system() == "Windows":
+            return os.path.join(engine_root, "stockfish.exe")
+        else:
+            # arm64 and x86_64 builds have respective names, try arm first then x86
+            preferred = os.path.join(engine_root, "stockfish")
+            fallback = os.path.join(engine_root, "stockfish_x86")
+            return preferred if os.path.exists(preferred) else fallback
+    else:
+        base_dir = os.path.dirname(__file__)
+        engine_root = os.path.join(base_dir, "engine")
+
+    system = platform.system()
+    if system == "Windows":
+        return os.path.join(engine_root, "win", "stockfish.exe")
+    elif system == "Darwin":
+        is_arm = platform.machine() in {"arm64", "aarch64"}
+        filename = "stockfish" if is_arm else "stockfish_x86"
+        return os.path.join(engine_root, "mac", filename)
+
+    # For any other OS, just expect stockfish in PATH as ultimate fallback
+    return "stockfish"
 
 __all__ = ["SettingsManager"] 

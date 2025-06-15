@@ -1,0 +1,5 @@
+typer[all]>=0.9
+rich>=13
+python-chess>=1.999
+requests>=2.26
+pyinstaller>=6.6.0   # only for building
