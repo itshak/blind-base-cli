@@ -693,12 +693,6 @@ def play_game(
                     print("Cannot analyze finished game position.")
                     time.sleep(1)
             elif command.lower() == "t":
-                # Clear footer (variations/cmds) lines below board before showing Masters tree
-                sys.stdout.write(f"\033[{footer_clear_height}A")
-                for _ in range(footer_clear_height):
-                    sys.stdout.write("\033[2K\n")
-                sys.stdout.write(f"\033[{footer_clear_height}A")
-
                 masters_moves = fetch_masters_moves(board, settings_manager)
                 if not masters_moves:
                     print("No Masters data available.")
