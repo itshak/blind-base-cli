@@ -556,10 +556,18 @@ def play_game(
                 move_info = f"Move {board.fullmove_number}. {'White to move' if board.turn == chess.WHITE else 'Black to move'}"
                 print("\033[2K" + move_info)
                 lines_printed_this_iteration += 1
-                board_str = str(board)
-                for line in board_str.splitlines():
-                    print("\033[2K" + line)
-                    lines_printed_this_iteration += 1
+                from blindbase.ui.accessibility import screen_reader_mode
+                if not screen_reader_mode():
+                    from blindbase.ui.board import render_board, get_console
+                    console = get_console()
+                    for text_row in render_board(board):
+                        console.print(text_row)
+                        lines_printed_this_iteration += 1
+                else:
+                    board_str = str(board)
+                    for line in board_str.splitlines():
+                        print("\033[2K" + line)
+                        lines_printed_this_iteration += 1
             else:
                 print(
                     f"\033[2KMove {board.fullmove_number}. {'W' if board.turn == chess.WHITE else 'B'}. (Board printing disabled)"
