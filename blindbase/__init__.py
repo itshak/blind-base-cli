@@ -9,4 +9,6 @@ from .analysis import (
     clear_analysis_block_dynamic,
     print_analysis_refined,
     analysis_thread_refined,
-)  # noqa: F401 
+)  # noqa: F401
+
+from .app import app as typer_app  # noqa: F401 
