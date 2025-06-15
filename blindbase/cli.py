@@ -267,8 +267,17 @@ def show_rounds_menu(broadcast_manager):
             print("No rounds available.")
         else:
             for i, round in enumerate(rounds):
-                name = round.get("name", "Unknown")
-                start_date = round.get("startDate", "Unknown")
+                name = round.get('name', 'Unknown')
+                # 'startsAt' is epoch millis; convert if present
+                ts = round.get('startsAt') or round.get('startsAfterPrevious') or round.get('createdAt')
+                if ts:
+                    try:
+                        import datetime as _dt
+                        start_date = _dt.datetime.utcfromtimestamp(ts/1000).strftime('%Y-%m-%d %H:%M')
+                    except Exception:
+                        start_date = str(ts)
+                else:
+                    start_date = 'Unknown'
                 print(f"{i+1}. {name} (Start: {start_date})")
         print("\nCommands: <number> (select round), 'b' (back)")
         choice = input("Select option: ").strip()
@@ -395,18 +404,32 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
             if broadcast_manager.fetch_broadcasts():
                 selected_game = show_broadcasts_menu(broadcast_manager)
                 if selected_game:
-                    navigator = GameNavigator(selected_game)
-                    play_game(
-                        None,
-                        engine,
-                        navigator,
-                        settings_manager,
-                        is_broadcast=True,
-                        broadcast_id=broadcast_manager.selected_broadcast["id"],
-                        round_id=broadcast_manager.selected_round["id"],
-                        game_id=selected_game.game_id,
-                        game_identifier=(selected_game.headers["White"], selected_game.headers["Black"]),
-                    )
+                    if not hasattr(selected_game, 'game_id'):
+                        print("Warning: game_id missing; opening PGN without live updates.")
+                        time.sleep(0.7)
+                        # Create a temporary GameManager wrapper for saving functionality
+                        from blindbase.storage import GameManager as _GM
+                        import tempfile, os as _os
+
+                        temp_pgn = _os.path.join(tempfile.gettempdir(), "temp_broadcast_game.pgn")
+                        gm_tmp = _GM(temp_pgn)
+                        gm_tmp.games = [selected_game]
+                        gm_tmp.current_game_index = 0
+                        navigator = GameNavigator(selected_game)
+                        play_game(gm_tmp, engine, 0, settings_manager)
+                    else:
+                        navigator = GameNavigator(selected_game)
+                        play_game(
+                            None,
+                            engine,
+                            navigator,
+                            settings_manager,
+                            is_broadcast=True,
+                            broadcast_id=broadcast_manager.selected_broadcast["id"],
+                            round_id=broadcast_manager.selected_round["id"],
+                            game_id=selected_game.game_id,
+                            game_identifier=(selected_game.headers["White"], selected_game.headers["Black"]),
+                        )
             is_first_call_of_session = True
         elif action in ("f", "next"):
             total_games = len(game_manager.games)
