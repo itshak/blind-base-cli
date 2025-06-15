@@ -69,3 +69,32 @@ jobs:
         with:
           name: blindbase-win
           path: dist/blindbase.exe
+
+  publish:
+    name: Publish GitHub Release
+    needs: [wheel, mac, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed for creating a release and uploading assets
+    steps:
+      - name: Download artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist_release
+          merge-multiple: true
+
+      - name: List downloaded files (debug)
+        run: ls -R dist_release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist_release/*.whl
+            dist_release/*.tar.gz
+            dist_release/blindbase_mac_arm64
+            dist_release/blindbase_mac_x86_64
+            dist_release/blindbase.exe
