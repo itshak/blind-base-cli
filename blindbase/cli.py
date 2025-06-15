@@ -320,7 +320,7 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
         if is_first_call_of_session:
             clear_screen_and_prepare_for_new_content(is_first_draw=True)
         else:
-            sys.stdout.write(f"\033[{total_menu_height}A")
+            sys.stdout.write("\033[H\033[J")
             sys.stdout.flush()
         is_first_call_of_session = False
         print("\033[2K--- GAME SELECTION MENU ---")
@@ -521,7 +521,8 @@ def play_game(
     game_id=None,
     game_identifier=None,
 ):
-    # Copied verbatim from legacy script with minimal tweaks.
+    # Track how many lines were printed in previous iteration so we can clear them
+    display_height = 0  # dynamic, ensures compact output
     if is_broadcast:
         navigator = navigator_or_index
         game_index = None
@@ -545,10 +546,7 @@ def play_game(
     GAME_VIEW_BLOCK_HEIGHT = 28
     try:
         while True:
-            sys.stdout.write(f"\033[{GAME_VIEW_BLOCK_HEIGHT}A")
-            for _ in range(GAME_VIEW_BLOCK_HEIGHT):
-                sys.stdout.write("\033[2K\n")
-            sys.stdout.write(f"\033[{GAME_VIEW_BLOCK_HEIGHT}A")
+            sys.stdout.write("\033[H\033[J")
             sys.stdout.flush()
             lines_printed_this_iteration = 0
             board = navigator.get_current_board()
@@ -617,8 +615,8 @@ def play_game(
                 while not update_queue.empty():
                     latest_pgn = update_queue.get()
                     navigator.update_from_broadcast_pgn(latest_pgn, game_identifier)
-            for _ in range(lines_printed_this_iteration, GAME_VIEW_BLOCK_HEIGHT - 1):
-                sys.stdout.write("\033[2K\n")
+            # Update the display_height for next refresh so we clear exactly what we printed
+            display_height = lines_printed_this_iteration + 2  # cmds line + command prompt
             sys.stdout.flush()
             print(
                 "\033[2KCmds: <mv>|# (e4,Nf3,1), [Ent](main), b(back), a(nalyze), t(tree), r(ead), p(gn), o(opening), "
