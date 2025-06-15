@@ -66,7 +66,7 @@ def print_analysis_refined(depth: int, lines_data: List[str], settings_manager):
 # Engine analysis thread helper
 # ----------------------------------------------------------------------
 
-def analysis_thread_refined(engine: chess.engine.SimpleEngine, board: chess.Board, stop_event, settings_manager):
+def analysis_thread_refined(engine: chess.engine.SimpleEngine, board: chess.Board, stop_event, settings_manager, shared_pv: dict | None = None):
     num_engine_lines = settings_manager.get("engine_lines_count")
     displayed_depth = 0
     displayed_lines_content = ["..."] * num_engine_lines
@@ -104,6 +104,8 @@ def analysis_thread_refined(engine: chess.engine.SimpleEngine, board: chess.Boar
                             pv_san = " ".join([board.uci(m) for m in pv]) + " (UCI)"
                         else:
                             pv_san = "Error in PV"
+                    if shared_pv is not None and pv:
+                        shared_pv[multipv_num] = pv[0]
                     if score.is_mate():
                         mate_in_plies = score.pov(board.turn).mate()
                         evaluation = f"M{abs(mate_in_plies)}" if mate_in_plies is not None else "Mate"

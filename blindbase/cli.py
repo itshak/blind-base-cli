@@ -98,46 +98,32 @@ def read_board_aloud(board: chess.Board):
     input("Press Enter to continue...")
 
 
-def get_lichess_data(board: chess.Board, settings_manager: SettingsManager):
-    fen = board.fen()
-    fen_enc = quote(fen)
-    url = f"https://explorer.lichess.ovh/masters?fen={fen_enc}"
+def fetch_masters_moves(board: chess.Board, settings_manager: SettingsManager):
+    """Return list of (san, stats str) for top moves from Lichess Masters."""
     num_moves = settings_manager.get("lichess_moves_count")
     if num_moves == 0:
-        return
-    print("\n--- Lichess Masters Database ---")
+        return []
+    fen_enc = quote(board.fen())
+    url = f"https://explorer.lichess.ovh/masters?fen={fen_enc}"
     try:
         resp = requests.get(url, timeout=3)
         resp.raise_for_status()
         data = resp.json()
-        op_name = "N/A"
-        op_info = data.get("opening")
-        if op_info:
-            op_name = op_info.get("name", "N/A")
-        if op_name != "N/A":
-            print(f"Opening: {op_name}")
-        moves = data.get("moves", [])
-        if moves:
-            print(f"Top {min(num_moves, len(moves))} moves:")
-            for m_data in moves[:num_moves]:
-                tot = m_data["white"] + m_data["draws"] + m_data["black"]
-                if tot > 0:
-                    wp, dp, bp = (
-                        m_data["white"] / tot * 100,
-                        m_data["draws"] / tot * 100,
-                        m_data["black"] / tot * 100,
-                    )
-                    print(
-                        f"  {m_data['san']}: {tot} games (W:{wp:.0f}%, D:{dp:.0f}%, B:{bp:.0f}%)"
-                    )
-        else:
-            print("No Lichess Masters data for this position.")
-    except requests.exceptions.Timeout:
-        print("Lichess Masters: Request timed out.")
-    except requests.exceptions.RequestException as e:
-        print(f"Lichess Masters: Error - {e}")
-    except Exception as e:
-        print(f"Lichess Masters: Processing error - {e}")
+        moves_out = []
+        for m_data in data.get("moves", [])[:num_moves]:
+            tot = m_data["white"] + m_data["draws"] + m_data["black"]
+            if tot == 0:
+                continue
+            wp, dp, bp = (
+                m_data["white"] / tot * 100,
+                m_data["draws"] / tot * 100,
+                m_data["black"] / tot * 100,
+            )
+            stats = f"{tot} games (W:{wp:.0f}%, D:{dp:.0f}%, B:{bp:.0f}%)"
+            moves_out.append((m_data["san"], stats))
+        return moves_out
+    except Exception:
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +235,7 @@ def show_games_menu(broadcast_manager):
         print("\nCommands: <number> (select game), 'b' (back)")
         choice = input("Select option: ").strip()
         if choice.lower() == "b":
-            return None
+            return "BACK"
         elif choice.isdigit():
             idx = int(choice) - 1
             if 0 <= idx < len(games):
@@ -282,12 +268,16 @@ def show_rounds_menu(broadcast_manager):
         print("\nCommands: <number> (select round), 'b' (back)")
         choice = input("Select option: ").strip()
         if choice.lower() == "b":
-            return None
+            return "BACK"
         elif choice.isdigit():
             idx = int(choice) - 1
             if 0 <= idx < len(rounds):
                 broadcast_manager.selected_round = rounds[idx]
-                return show_games_menu(broadcast_manager)
+                res = show_games_menu(broadcast_manager)
+                if res == "BACK":
+                    continue
+                else:
+                    return res
         else:
             print("Invalid option.")
 
@@ -312,7 +302,11 @@ def show_broadcasts_menu(broadcast_manager):
             idx = int(choice) - 1
             if 0 <= idx < len(broadcast_manager.broadcasts):
                 broadcast_manager.selected_broadcast = broadcast_manager.broadcasts[idx]
-                return show_rounds_menu(broadcast_manager)
+                res = show_rounds_menu(broadcast_manager)
+                if res == "BACK":
+                    continue
+                else:
+                    return res
         else:
             print("Invalid option.")
 
@@ -401,35 +395,48 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
             time.sleep(1)
         elif action == "b":
             broadcast_manager = BroadcastManager()
-            if broadcast_manager.fetch_broadcasts():
-                selected_game = show_broadcasts_menu(broadcast_manager)
-                if selected_game:
-                    if not hasattr(selected_game, 'game_id'):
-                        print("Warning: game_id missing; opening PGN without live updates.")
-                        time.sleep(0.7)
-                        # Create a temporary GameManager wrapper for saving functionality
-                        from blindbase.storage import GameManager as _GM
-                        import tempfile, os as _os
+            broadcast_manager.fetch_broadcasts()
+            selected_game = show_broadcasts_menu(broadcast_manager)
+            while selected_game:
+                # Enter game view loop; upon exit, return to games list
+                if not hasattr(selected_game, 'game_id'):
+                    print("Warning: game_id missing; opening PGN without live updates.")
+                    time.sleep(0.7)
+                    from blindbase.storage import GameManager as _GM
+                    import tempfile, os as _os
 
-                        temp_pgn = _os.path.join(tempfile.gettempdir(), "temp_broadcast_game.pgn")
-                        gm_tmp = _GM(temp_pgn)
-                        gm_tmp.games = [selected_game]
-                        gm_tmp.current_game_index = 0
-                        navigator = GameNavigator(selected_game)
-                        play_game(gm_tmp, engine, 0, settings_manager)
+                    temp_pgn = _os.path.join(tempfile.gettempdir(), "temp_broadcast_game.pgn")
+                    gm_tmp = _GM(temp_pgn)
+                    gm_tmp.games = [selected_game]
+                    gm_tmp.current_game_index = 0
+                    navigator = GameNavigator(selected_game)
+                    play_game(gm_tmp, engine, 0, settings_manager)
+                else:
+                    navigator = GameNavigator(selected_game)
+                    play_game(
+                        None,
+                        engine,
+                        navigator,
+                        settings_manager,
+                        is_broadcast=True,
+                        broadcast_id=broadcast_manager.selected_broadcast["id"],
+                        round_id=broadcast_manager.selected_round["id"],
+                        game_id=selected_game.game_id,
+                        game_identifier=(selected_game.headers["White"], selected_game.headers["Black"]),
+                    )
+                # After exiting game view, show games list again
+                selected_game = show_games_menu(broadcast_manager)
+                if selected_game == "BACK":
+                    # user went back to rounds list; let user continue there
+                    res_from_rounds = show_rounds_menu(broadcast_manager)
+                    if res_from_rounds == "BACK":
+                        # user went back to tournaments list; show_broadcasts_menu again
+                        selected_game = show_broadcasts_menu(broadcast_manager)
+                        continue  # restart loop with new selection or None
                     else:
-                        navigator = GameNavigator(selected_game)
-                        play_game(
-                            None,
-                            engine,
-                            navigator,
-                            settings_manager,
-                            is_broadcast=True,
-                            broadcast_id=broadcast_manager.selected_broadcast["id"],
-                            round_id=broadcast_manager.selected_round["id"],
-                            game_id=selected_game.game_id,
-                            game_identifier=(selected_game.headers["White"], selected_game.headers["Black"]),
-                        )
+                        # res_from_rounds could be a game; loop will iterate again
+                        selected_game = res_from_rounds
+                        continue
             is_first_call_of_session = True
         elif action in ("f", "next"):
             total_games = len(game_manager.games)
@@ -493,9 +500,9 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
                 print("\033[2KInvalid game number.")
                 time.sleep(1)
         else:
-            if choice:
-                print("\033[2KInvalid command. Please try again.")
-                time.sleep(0.5)
+            # Note: in-game commands like 't' (Masters tree) and 'a' (analysis) are handled inside play_game(), not here.
+            pass
+    # end while loop
 
 
 # ---------------------------------------------------------------------------
@@ -554,7 +561,14 @@ def play_game(
             lines_printed_this_iteration += 1
             if settings_manager.get("show_chessboard"):
                 move_info = f"Move {board.fullmove_number}. {'White to move' if board.turn == chess.WHITE else 'Black to move'}"
-                print("\033[2K" + move_info)
+                last_move_san = "-"
+                if navigator.current_node.parent is not None:
+                    temp_board = navigator.current_node.parent.board()
+                    try:
+                        last_move_san = temp_board.san(navigator.current_node.move)
+                    except Exception:
+                        last_move_san = navigator.current_node.move.uci()
+                print("\033[2K" + move_info + f" | Last move: {last_move_san}")
                 lines_printed_this_iteration += 1
                 from blindbase.ui.accessibility import screen_reader_mode
                 if not screen_reader_mode():
@@ -598,8 +612,7 @@ def play_game(
                         break
                     print(f"\033[2K  {var_line}")
                     lines_printed_this_iteration += 1
-            if not board.is_game_over() and settings_manager.get("lichess_moves_count") > 0:
-                get_lichess_data(board, settings_manager)
+            # Masters data will be shown on demand via 't' command
             if is_broadcast:
                 while not update_queue.empty():
                     latest_pgn = update_queue.get()
@@ -608,7 +621,8 @@ def play_game(
                 sys.stdout.write("\033[2K\n")
             sys.stdout.flush()
             print(
-                "\033[2KCmds: <mv>|# (e4,Nf3,1), [Ent](main), b(back), a(nalyze), r(ead), p(gn), d # (del var #), m(enu,save), q(menu,no save)"
+                "\033[2KCmds: <mv>|# (e4,Nf3,1), [Ent](main), b(back), a(nalyze), t(tree), r(ead), p(gn), o(opening), "
+                "d # (del var #), m(enu,save), q(menu,no save)"
             )
             command = input("\033[2KCommand: ").strip()
             if command.lower() == "m":
@@ -639,14 +653,27 @@ def play_game(
                     analysis_block_h = get_analysis_block_height(settings_manager)
                     print("\n" * (analysis_block_h + 1))
                     sys.stdout.write(f"\033[{analysis_block_h + 1}A")
-                    print("\033[2KStarting engine analysis...")
+                    print(f"\033[2KStarting engine analysis...")
+                    print("\033[2KEnter the number of the line to make a move on the board or enter 'b' to go back.")
                     stop_event_analyze = threading.Event()
+                    shared_pv: dict[int, chess.Move] = {}
                     analysis_thread_instance = threading.Thread(
                         target=analysis_thread_refined,
-                        args=(engine, board.copy(), stop_event_analyze, settings_manager),
+                        args=(engine, board.copy(), stop_event_analyze, settings_manager, shared_pv)
                     )
                     analysis_thread_instance.start()
-                    input("\033[2KAnalysis running. Press Enter to stop...")
+                    while True:
+                        user_inp = input("\033[2K> ").strip()
+                        if user_inp == "" or user_inp.lower() == "b":
+                            break
+                        if user_inp.isdigit():
+                            var_num = int(user_inp)
+                            if var_num in shared_pv:
+                                move_obj = shared_pv[var_num]
+                                navigator.make_move(move_obj.uci())
+                                break
+                            else:
+                                print("Variation not ready yet.")
                     stop_event_analyze.set()
                     analysis_thread_instance.join(timeout=3)
                     clear_analysis_block_dynamic(settings_manager)
@@ -657,6 +684,45 @@ def play_game(
                 else:
                     print("Cannot analyze finished game position.")
                     time.sleep(1)
+            elif command.lower() == "t":
+                masters_moves = fetch_masters_moves(board, settings_manager)
+                if not masters_moves:
+                    print("No Masters data available.")
+                    time.sleep(1)
+                else:
+                    print("--- Masters moves ---")
+                    for idx, (san, stats) in enumerate(masters_moves, 1):
+                        print(f"  {idx}. {san}  {stats}")
+                    choice = input("Select move number or 'b' to cancel: ").strip()
+                    if choice.isdigit():
+                        num = int(choice)
+                        if 1 <= num <= len(masters_moves):
+                            sel_san = masters_moves[num-1][0]
+                            success, _ = navigator.make_move(sel_san)
+                            if not success:
+                                print("Invalid move from Masters list.")
+                                time.sleep(1)
+            elif command.lower() == "o":
+                # Show opening line/path from root to current node
+                path_moves = []
+                temp_node = navigator.current_node
+                while temp_node.parent is not None:
+                    temp_node = temp_node.parent
+                # traverse main line until current path length
+                b = navigator.working_game.board()
+                node = navigator.working_game
+                display_line = []
+                while node is not navigator.current_node and node.variations:
+                    next_node = node.variations[0]
+                    try:
+                        san = b.san(next_node.move)
+                    except Exception:
+                        san = next_node.move.uci()
+                    display_line.append(san)
+                    b.push(next_node.move)
+                    node = next_node
+                print("Opening line: " + " ".join(display_line))
+                input("Press Enter to continue...")
             elif command.lower() == "p":
                 clear_screen_and_prepare_for_new_content()
                 print(

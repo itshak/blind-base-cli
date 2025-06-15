@@ -27,10 +27,7 @@ UNICODE_PIECES = {
 
 def render_board(board: chess.Board, use_unicode: bool = True) -> list[Text]:
     """Return list of Text rows to print for *board*."""
-    console_width = get_console().size.width
-    square_width = 2                # glyph + space
-    board_pix_width = square_width * 8
-    left_pad = max(0, (console_width - board_pix_width) // 2)
+    left_pad = 0  # left align board with other content
 
     rows: list[Text] = []
     for rank in range(7, -1, -1):
@@ -47,14 +44,16 @@ def render_board(board: chess.Board, use_unicode: bool = True) -> list[Text]:
                 glyph = " "
 
             is_dark_square = (file + rank) % 2 == 1
-            bg = "#769656" if is_dark_square else "#EEEED2"
+            # Swap colours so that d1 becomes light square (light and dark reversed)
+            bg = "#EEEED2" if is_dark_square else "#769656"
             if piece:
                 if piece.color == chess.WHITE:
                     fg_style = "bold white"
                 else:
                     fg_style = "black"
             else:
-                fg_style = "white" if is_dark_square else "black"
+                # adjust text colour for reversed background choice
+                fg_style = "white" if bg == "#769656" else "black"
 
             style = f"{fg_style} on {bg}"
             line.append(f"{glyph} ", style=style)   # glyph plus trailing space
