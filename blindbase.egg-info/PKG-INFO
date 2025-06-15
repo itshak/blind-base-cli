@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: blindbase
+Version: 0.4.0
+Summary: Accessible CLI chess study tool with Lichess, Stockfish & Rich.
+Author-email: Alexey Streltsov <aistreltsov@outlook.com>
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: typer[all]>=0.9
+Requires-Dist: rich>=13
+Requires-Dist: python-chess>=1.999
+Requires-Dist: requests>=2.26

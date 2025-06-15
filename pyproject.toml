@@ -1,0 +1,20 @@
+[project]
+name = "blindbase"
+version = "0.4.0"
+description = "Accessible CLI chess study tool with Lichess, Stockfish & Rich."
+authors = [{name="Alexey Streltsov", email="aistreltsov@outlook.com"}]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "typer[all]>=0.9",
+    "rich>=13",
+    "python-chess>=1.999",
+    "requests>=2.26",
+]
+
+[project.scripts]       # creates `blindbase` command
+blindbase = "blindbase.app:app"
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"

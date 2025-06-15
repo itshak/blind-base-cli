@@ -1,0 +1,2 @@
+[console_scripts]
+blindbase = blindbase.app:app
