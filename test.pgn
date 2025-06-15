@@ -1,0 +1,23 @@
+﻿[Event "?"]
+[Site "?"]
+[Date "2025.05.30"]
+[Round "?"]
+[White "Alexey"]
+[Black "Yan"]
+[Result "1-0"]
+
+1. e4 (1. d4 Nf6 2. c4 g6 3. Nc3 (3. Nf3 Bg7 4. Nc3 d5) 3... d5) 1... e5 (1... c5 2. Nf3 Nc6 (2... d6 3. Bc4) 3. d4) 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5
+
+[Event "?"]
+[Site "?"]
+[Date "2025.05.30"]
+[Round "?"]
+[White "Yan"]
+[Black "Alexey"]
+[Result "1-0"]
+[PlyCount "9"]
+[GameId "2181391674224734"]
+[EventDate "2025.??.??"]
+
+1. d4 Nf6 2. Nc3 d5 3. Bf4 c5 4. e3 Nc6 5. Nb5 1-0
+

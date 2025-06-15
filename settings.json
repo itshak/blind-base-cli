@@ -1,0 +1,10 @@
+{
+    "lichess_moves_count": 5,
+    "engine_lines_count": 3,
+    "show_chessboard": true,
+    "analysis_block_padding": 3,
+    "engine_path": "./stockfish",
+    "pgn_file_directory": ".",
+    "default_pgn_filename": "games.pgn",
+    "games_per_page": 10
+}
