@@ -701,6 +701,9 @@ def play_game(
             elif command.lower() == "r":
                 read_board_aloud(board)
             elif command.lower() == "a":
+                if engine is None:
+                    print("Engine not available. Configure engine path in settings first.")
+                    continue
                 if not board.is_game_over():
                     analysis_block_h = get_analysis_block_height(settings_manager)
                     # Clear existing footer (variations/cmds) lines below board

@@ -1,6 +1,6 @@
 [project]
 name = "blindbase"
-version = "0.6.1"
+version = "0.6.2"
 description = "Accessible CLI chess study tool with Stockfish analysis and  Lichess integration."
 authors = [{name="Alexey Streltsov", email="iitshak@gmail.com"}]
 readme = "README.md"
@@ -36,6 +36,14 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
+packages = ["blindbase"]
+
+[tool.setuptools.package-data]
+blindbase = []  # include no heavy binaries by default
+
+[tool.setuptools.exclude-package-data]
+blindbase = ["resources/stockfish*"]
+
 include-package-data = false
 
 [tool.setuptools.package-data]
