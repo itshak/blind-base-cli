@@ -178,9 +178,9 @@ def show_settings_menu(settings_manager: SettingsManager):
         print(f"3. Show Chessboard (current: {'Yes' if settings_manager.get('show_chessboard') else 'No'})")
         print(f"4. Analysis Block Padding (current: {settings_manager.get('analysis_block_padding')})")
         print(f"5. Engine Path (current: {settings_manager.get('engine_path')})")
-        print(f"6. PGN File Directory (current: {settings_manager.get('pgn_file_directory')})")
+        print(f"6. PGN Files Directory (current: {settings_manager.get('pgn_file_directory')})")
         print(f"7. Default PGN Filename (current: {settings_manager.get('default_pgn_filename')})")
-        print(f"8. Games Per Page in Menu (current: {settings_manager.get('games_per_page')})")
+        print(f"8. Games Per Page in Games List (current: {settings_manager.get('games_per_page')})")
         print(f"9. Move notation style (current: {settings_manager.get('move_notation')})")
         print("10. Go Back")
         choice = input("\nSelect option: ").strip()
@@ -409,7 +409,6 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
             print("\033[2K--------------------")
             for _ in range(games_per_page):
                 print("\033[2K")
-            print("\033[2KCommands: 'n' (new game), 'r' (reload PGN), 's' (settings), 'b' (broadcasts), 'q' (quit)")
         else:
             total_games = len(game_manager.games)
             total_pages = (total_games + games_per_page - 1) // games_per_page
@@ -452,7 +451,7 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
                     cmd_list.append("'f'(next page)")
             cmd_list.extend(["'d <num>'(del)", "'q'(quit)"])
             print(f"\033[2KCmds: {', '.join(cmd_list)}")
-        print("\033[2KCommand: ", end="", flush=True)
+        print("\033[2KCommand (h for help): ", end="", flush=True)
         choice = input().strip().lower()
         if choice == 'm':
             show_main_menu(game_manager, settings_manager, engine)
@@ -1105,6 +1104,11 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
         elif choice in ("b", "q"):
             # 'q' from main menu quits entire program
             if choice == "q":
+                if engine:
+                    try:
+                        engine.quit()
+                    except Exception:
+                        pass
                 sys.exit(0)
             break
         else:
