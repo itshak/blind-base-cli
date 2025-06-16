@@ -338,11 +338,7 @@ def show_rounds_menu(broadcast_manager):
             idx = int(choice) - 1
             if 0 <= idx < len(rounds):
                 broadcast_manager.selected_round = rounds[idx]
-                res = show_games_menu(broadcast_manager)
-                if res == "BACK":
-                    continue
-                else:
-                    return res
+                return broadcast_manager.selected_round
         elif choice.lower() == 'm':
             show_main_menu(None, SettingsManager(), None)
             continue
@@ -374,11 +370,7 @@ def show_broadcasts_menu(broadcast_manager):
             idx = int(choice) - 1
             if 0 <= idx < len(broadcast_manager.broadcasts):
                 broadcast_manager.selected_broadcast = broadcast_manager.broadcasts[idx]
-                res = show_rounds_menu(broadcast_manager)
-                if res == "BACK":
-                    continue
-                else:
-                    return res
+                return "SELECTED"
         elif choice.lower() == 'm':
             show_main_menu(None, SettingsManager(), None)
             continue
@@ -1084,19 +1076,30 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
         elif choice == "2":
             bc_manager = BroadcastManager()
             bc_manager.fetch_broadcasts()
-            res = show_broadcasts_menu(bc_manager)
-            if isinstance(res, chess.pgn.Game):
-                play_game(
-                    game_manager,
-                    engine,
-                    res,
-                    settings_manager,
-                    is_broadcast=True,
-                    broadcast_id=bc_manager.selected_broadcast["id"],
-                    round_id=bc_manager.selected_round["id"],
-                    game_id=getattr(res, "game_id", res.headers.get("Site", "").split("/")[-1]),
-                )
-            # Otherwise (BACK/None), simply continue to show main menu
+            while True:  # broadcasts loop
+                if show_broadcasts_menu(bc_manager) is None:
+                    break  # back to main menu
+                # rounds loop
+                while True:
+                    sel_round = show_rounds_menu(bc_manager)
+                    if sel_round == "BACK":
+                        break  # back to broadcasts list
+                    # games loop for selected round
+                    while True:
+                        sel_game = show_games_menu(bc_manager)
+                        if sel_game == "BACK":
+                            break  # back to rounds list
+                        # Play chosen game
+                        play_game(
+                            game_manager,
+                            engine,
+                            sel_game,
+                            settings_manager,
+                            is_broadcast=True,
+                            broadcast_id=bc_manager.selected_broadcast["id"],
+                            round_id=bc_manager.selected_round["id"],
+                            game_id=getattr(sel_game, "game_id", sel_game.headers.get("Site", "").split("/")[-1]),
+                        )
         elif choice == "3":
             show_settings_menu(settings_manager)
         elif choice == "h":
