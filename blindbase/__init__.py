@@ -1,4 +1,4 @@
-__version__ = "0.6.3.1"
+__version__ = "0.6.3.2"
 
 from .settings import SettingsManager  # noqa: F401
 from .storage import GameManager      # noqa: F401
