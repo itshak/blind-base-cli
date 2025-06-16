@@ -23,6 +23,7 @@ class SettingsManager:
             "pgn_file_directory": ".",
             "default_pgn_filename": "games.pgn",
             "games_per_page": 10,
+            "move_notation": "san",
         }
         self.settings: Dict[str, Any] = {}
         self.load_settings()

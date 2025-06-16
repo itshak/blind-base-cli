@@ -60,16 +60,32 @@ def read_board_aloud(board: chess.Board):
         chess.QUEEN: "Q",
         chess.KING: "K",
     }
+    piece_words = {
+        chess.PAWN: "Pawn",
+        chess.ROOK: "Rook",
+        chess.KNIGHT: "Knight",
+        chess.BISHOP: "Bishop",
+        chess.QUEEN: "Queen",
+        chess.KING: "King",
+    }
     pieces_data = []
     for sq_idx in chess.SQUARES:
         pc = board.piece_at(sq_idx)
         if pc:
             sq_name = chess.square_name(sq_idx)
-            disp_str = (
-                piece_chars[pc.piece_type] + sq_name
-                if pc.piece_type != chess.PAWN
-                else sq_name
-            )
+            style_pref = SettingsManager().get('move_notation')
+            square_disp = format_square(sq_name, style_pref)
+            notation_style = style_pref.lower()
+            if notation_style in {"literate", "nato", "anna"}:
+                if pc.piece_type == chess.PAWN:
+                    disp_str = square_disp
+                else:
+                    disp_str = f"{piece_words[pc.piece_type]} {square_disp}"
+            else:
+                if pc.piece_type == chess.PAWN:
+                    disp_str = square_disp
+                else:
+                    disp_str = piece_chars[pc.piece_type] + square_disp
             pieces_data.append(
                 {
                     "display": disp_str,
@@ -142,7 +158,8 @@ def show_settings_menu(settings_manager: SettingsManager):
         print(f"6. PGN File Directory (current: {settings_manager.get('pgn_file_directory')})")
         print(f"7. Default PGN Filename (current: {settings_manager.get('default_pgn_filename')})")
         print(f"8. Games Per Page in Menu (current: {settings_manager.get('games_per_page')})")
-        print("9. Back to Game Selection")
+        print(f"9. Move notation style (current: {settings_manager.get('move_notation')})")
+        print("10. Back to Game Selection")
         choice = input("\nSelect option: ").strip()
         if choice == "1":
             try:
@@ -205,10 +222,23 @@ def show_settings_menu(settings_manager: SettingsManager):
             except ValueError:
                 print("Invalid number.")
         elif choice == "9":
+            print("Select notation style:")
+            print("1. uci   (e2e4)")
+            print("2. san   (Nxf3)")
+            print("3. literate  (Knight takes f 3)")
+            print("4. nato  (Knight takes foxtrot 3)")
+            print("5. anna  (Knight takes felix 3)")
+            sel = input("Choose 1-5: ").strip()
+            mapping = {"1":"uci","2":"san","3":"literate","4":"nato","5":"anna"}
+            if sel in mapping:
+                settings_manager.set('move_notation', mapping[sel])
+                print("Notation updated.")
+                time.sleep(0.7)
+        elif choice == "10":
             break
         else:
             print("Invalid option.")
-        if choice in [str(i) for i in range(1, 9)]:
+        if choice in [str(i) for i in range(1, 10)]:
             print("Setting updated.")
             time.sleep(0.7)
 
@@ -241,6 +271,12 @@ def show_games_menu(broadcast_manager):
             if 0 <= idx < len(games):
                 broadcast_manager.selected_game = games[idx]
                 return broadcast_manager.selected_game
+        elif choice.lower() == 'm':
+            show_main_menu(None, SettingsManager(), None)
+            continue
+        elif choice.lower() == 'h':
+            show_help('broadcast_menus')
+            continue
         else:
             print("Invalid option.")
 
@@ -278,6 +314,12 @@ def show_rounds_menu(broadcast_manager):
                     continue
                 else:
                     return res
+        elif choice.lower() == 'm':
+            show_main_menu(None, SettingsManager(), None)
+            continue
+        elif choice.lower() == 'h':
+            show_help('broadcast_menus')
+            continue
         else:
             print("Invalid option.")
 
@@ -307,6 +349,12 @@ def show_broadcasts_menu(broadcast_manager):
                     continue
                 else:
                     return res
+        elif choice.lower() == 'm':
+            show_main_menu(None, SettingsManager(), None)
+            continue
+        elif choice.lower() == 'h':
+            show_help('broadcast_menus')
+            continue
         else:
             print("Invalid option.")
 
@@ -375,6 +423,14 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
             print(f"\033[2KCmds: {', '.join(cmd_list)}")
         print("\033[2KCommand: ", end="", flush=True)
         choice = input().strip().lower()
+        if choice == 'm':
+            show_main_menu(game_manager, settings_manager, engine)
+            is_first_call_of_session = True
+            continue
+        if choice == 'h':
+            show_help('game_selection')
+            is_first_call_of_session = True
+            continue
         cmd_parts = choice.split()
         action = cmd_parts[0] if cmd_parts else ""
         if action == "q":
@@ -558,16 +614,13 @@ def play_game(
             print("\033[2K" + title)
             lines_printed_this_iteration += 1
             if settings_manager.get("show_chessboard"):
-                move_info = f"Move {board.fullmove_number}. {'White to move' if board.turn == chess.WHITE else 'Black to move'}"
                 last_move_san = "-"
                 if navigator.current_node.parent is not None:
                     temp_board = navigator.current_node.parent.board()
                     try:
-                        last_move_san = temp_board.san(navigator.current_node.move)
+                        last_move_san = move_to_str(temp_board, navigator.current_node.move, settings_manager.get('move_notation'))
                     except Exception:
                         last_move_san = navigator.current_node.move.uci()
-                print("\033[2K" + move_info + f" | Last move: {last_move_san}")
-                lines_printed_this_iteration += 1
                 from blindbase.ui.accessibility import screen_reader_mode
                 if not screen_reader_mode():
                     from blindbase.ui.board import render_board, get_console
@@ -580,10 +633,19 @@ def play_game(
                     for line in board_str.splitlines():
                         print("\033[2K" + line)
                         lines_printed_this_iteration += 1
+                # After board rows, show turn & last move info
+                turn_str = "white" if board.turn == chess.WHITE else "black"
+                print(f"\033[2KTurn: {turn_str}")
+                lines_printed_this_iteration += 1
+                if last_move_san != "-":
+                    move_num_disp = (board.fullmove_number - 1) if board.turn == chess.WHITE else board.fullmove_number
+                    print(f"\033[2KLast move: {move_num_disp}.{last_move_san}")
+                else:
+                    print("\033[2KLast move: Initial position")
+                lines_printed_this_iteration += 1
             else:
-                print(
-                    f"\033[2KMove {board.fullmove_number}. {'W' if board.turn == chess.WHITE else 'B'}. (Board printing disabled)"
-                )
+                turn_str = "white" if board.turn == chess.WHITE else "black"
+                print(f"\033[2KTurn: {turn_str} (board hidden)")
                 lines_printed_this_iteration += 1
             if is_broadcast:
                 white_time, black_time = navigator.get_clocks()
@@ -602,16 +664,18 @@ def play_game(
             # Save core_lines_count before printing variations/footer
             core_lines_count = lines_printed_this_iteration
 
-            variations = navigator.show_variations()
-            if variations:
-                print("\033[2K\n\033[2KAvailable moves/variations:")
+            variations_nodes = navigator.current_node.variations
+            if variations_nodes:
+                print("\033[2K\n\033[2KNext moves:")
                 lines_printed_this_iteration += 2
-                for i, var_line in enumerate(variations):
+                style_pref = settings_manager.get('move_notation')
+                for i, var_node in enumerate(variations_nodes):
                     if i >= 4:
                         print("\033[2K  ... (more variations exist)")
                         lines_printed_this_iteration += 1
                         break
-                    print(f"\033[2K  {var_line}")
+                    disp = move_to_str(board.copy(), var_node.move, style_pref)
+                    print(f"\033[2K  {i+1}. {disp}")
                     lines_printed_this_iteration += 1
             # Masters data will be shown on demand via 't' command
             if is_broadcast:
@@ -619,27 +683,18 @@ def play_game(
                     latest_pgn = update_queue.get()
                     navigator.update_from_broadcast_pgn(latest_pgn, game_identifier)
             # Update the display_height for next refresh so we clear exactly what we printed
-            footer_clear_height = (lines_printed_this_iteration + 2) - core_lines_count
-            display_height = lines_printed_this_iteration + 2  # cmds line + command prompt
+            footer_clear_height = (lines_printed_this_iteration + 1) - core_lines_count
+            display_height = lines_printed_this_iteration + 1  # command prompt line only
             sys.stdout.flush()
-            print(
-                "\033[2KCmds: <mv>|# (e4,Nf3,1), [Ent](main), b(back), a(nalyze), t(tree), r(ead), p(gn), o(opening), "
-                "d # (del var #), m(enu,save), q(menu,no save)"
-            )
-            command = input("\033[2KCommand: ").strip()
+            command = input("\033[2Kcommand (h for help): ").strip()
+            # Global commands
             if command.lower() == "m":
-                if not is_broadcast and navigator.has_changes:
-                    game_manager.games[game_index] = navigator.working_game
-                    if game_manager.save_games():
-                        print("Changes saved to PGN file.")
-                    else:
-                        print("Error saving PGN file.")
-                    navigator.has_changes = False
-                else:
-                    print("No changes to save." if not is_broadcast else "Broadcast game, no save needed.")
-                time.sleep(0.7)
-                break
-            elif command.lower() == "q":
+                show_main_menu(game_manager, settings_manager, engine)
+                continue
+            if command.lower() == "h":
+                show_help("game_view")
+                continue
+            if command.lower() == "q":
                 if not is_broadcast and navigator.has_changes:
                     confirm_quit = input("Unsaved changes. Quit anyway? (y/N): ").strip().lower()
                     if confirm_quit != "y":
@@ -699,14 +754,19 @@ def play_game(
                     sys.stdout.write("\033[2K\n")
                 sys.stdout.write(f"\033[{footer_clear_height}A")
 
+                print("--- Opening tree ---")
                 masters_moves = fetch_masters_moves(board, settings_manager)
                 if not masters_moves:
                     print("No Masters data available.")
                     time.sleep(1)
                 else:
-                    print("--- Masters moves ---")
                     for idx, (san, stats) in enumerate(masters_moves, 1):
-                        print(f"  {idx}. {san}  {stats}")
+                        try:
+                            mv = board.parse_san(san)
+                            san_disp = move_to_str(board.copy(), mv, settings_manager.get('move_notation'))
+                        except Exception:
+                            san_disp = san
+                        print(f"  {idx}. {san_disp}  {stats}")
                     choice = input("Select move number or 'b' to cancel: ").strip()
                     if choice.isdigit():
                         num = int(choice)
@@ -716,28 +776,57 @@ def play_game(
                             if not success:
                                 print("Invalid move from Masters list.")
                                 time.sleep(1)
-            elif command.lower() == "o":
-                # Show opening line/path from root to current node
-                path_moves = []
-                temp_node = navigator.current_node
-                while temp_node.parent is not None:
-                    temp_node = temp_node.parent
-                # traverse main line until current path length
-                b = navigator.working_game.board()
-                node = navigator.working_game
-                display_line = []
-                while node is not navigator.current_node and node.variations:
-                    next_node = node.variations[0]
-                    try:
-                        san = b.san(next_node.move)
-                    except Exception:
-                        san = next_node.move.uci()
-                    display_line.append(san)
-                    b.push(next_node.move)
-                    node = next_node
-                print("Opening line: " + " ".join(display_line))
+
+            # -------------------- NEW COMMANDS --------------------
+            elif command.lower().startswith("p") and command.lower() not in ("pg", "pgn"):
+                # Piece location announcement: 'p N' etc.
+                parts = command.split(maxsplit=1)
+                piece_code = parts[1] if len(parts) == 2 else command[1:]
+                if not piece_code:
+                    piece_code = input("Enter piece code (e.g., N, k, A): ").strip()
+                style_pref = settings_manager.get('move_notation')
+                msg = describe_piece_locations_formatted(board, piece_code, style_pref)
+                print(msg)
                 input("Press Enter to continue...")
-            elif command.lower() == "p":
+
+            elif command.lower().startswith("s"):
+                # Rank/File announcement: 's a' or 's 1'
+                parts = command.split(maxsplit=1)
+                spec = parts[1] if len(parts) == 2 else command[1:]
+                if not spec:
+                    spec = input("Enter file (a-h) or rank (1-8): ").strip()
+                style_pref = settings_manager.get('move_notation')
+                msg = describe_file_or_rank_formatted(board, spec, style_pref)
+                print(msg)
+                input("Press Enter to continue...")
+
+            elif command.lower() in ("eval", "c"):
+                try:
+                    info = engine.analyse(board.copy(), chess.engine.Limit(depth=18))
+                    score = info["score"].white()
+                    depth = info.get("depth", 0)
+                    if score.is_mate():
+                        val_str = f"M{score.mate()}"
+                    else:
+                        cp = score.score(mate_score=100000)
+                        val_str = f"{cp/100:+.2f}"
+                    print(f"{val_str} (depth {depth})")
+                except Exception as e:
+                    print(f"Error getting evaluation: {e}")
+                input("Press Enter to continue...")
+
+            elif command.lower() == "prev":
+                if not navigator.go_back():
+                    print("Already at starting position.")
+                time.sleep(0.5)
+
+            elif command.lower() == "next":
+                success, _ = navigator.make_move("")
+                if not success:
+                    print("No main line move available or already at end.")
+                    time.sleep(1)
+
+            elif command.lower() in ("pg", "pgn"):
                 clear_screen_and_prepare_for_new_content()
                 print(
                     f"--- PGN for {'Broadcast Game' if is_broadcast else f'Game {game_index+1}'} ---"
@@ -759,6 +848,18 @@ def play_game(
                 else:
                     print("Invalid delete variation command. Use 'd <number>'.")
                     time.sleep(1)
+            elif command.lower() == "save":
+                if not is_broadcast and navigator.has_changes:
+                    game_manager.games[game_index] = navigator.working_game
+                    if game_manager.save_games():
+                        print("Changes saved to PGN file.")
+                    else:
+                        print("Error saving PGN file.")
+                    navigator.has_changes = False
+                else:
+                    print("No changes to save." if not is_broadcast else "Broadcast game, no save needed.")
+                time.sleep(0.7)
+                break
             else:
                 success, move_obj = navigator.make_move(command)
                 if success and move_obj:
@@ -786,6 +887,213 @@ def play_game(
         if is_broadcast:
             stop_event.set()
             streaming_thread.join()
+
+
+# ---------------------------------------------------------------------------
+# New helpers for granular board announcements (piece/file/rank)
+# ---------------------------------------------------------------------------
+
+def get_squares_for_piece(board: chess.Board, piece_code: str) -> list[str]:
+    """Return list of square names matching *piece_code*.
+
+    piece_code examples:
+        'N' – white knights, 'k' – black king, 'A' – all white pieces, 'a' – all black pieces.
+    """
+    if not piece_code:
+        return []
+    code = piece_code[0]
+    # Handle special 'A' / 'a' -> all pieces of one colour
+    if code in ("A", "a"):
+        colour = chess.WHITE if code.isupper() else chess.BLACK
+        return [chess.square_name(sq) for sq, pc in board.piece_map().items() if pc.color == colour]
+    # Map to piece type
+    piece_map = {
+        "p": chess.PAWN,
+        "n": chess.KNIGHT,
+        "b": chess.BISHOP,
+        "r": chess.ROOK,
+        "q": chess.QUEEN,
+        "k": chess.KING,
+    }
+    piece_type = piece_map.get(code.lower())
+    if piece_type is None:
+        return []
+    colour = chess.WHITE if code.isupper() else chess.BLACK
+    squares = [chess.square_name(sq) for sq, pc in board.piece_map().items() if pc.color == colour and pc.piece_type == piece_type]
+    return squares
+
+
+def describe_piece_locations(board: chess.Board, piece_code: str) -> str:
+    # Handle 'A' / 'a' (all pieces of one colour)
+    if piece_code.lower() == "a":
+        # List all pieces of given colour with square names
+        colour = chess.WHITE if piece_code.isupper() else chess.BLACK
+        piece_chars = {chess.PAWN:"", chess.ROOK:"R", chess.KNIGHT:"N", chess.BISHOP:"B", chess.QUEEN:"Q", chess.KING:"K"}
+        pieces = []
+        piece_priority = {chess.KING:0, chess.QUEEN:1, chess.ROOK:2, chess.BISHOP:3, chess.KNIGHT:4, chess.PAWN:5}
+        for sq, pc in board.piece_map().items():
+            if pc.color == colour:
+                disp = (piece_chars[pc.piece_type] + chess.square_name(sq)) if pc.piece_type != chess.PAWN else chess.square_name(sq)
+                pieces.append((piece_priority[pc.piece_type], disp))
+        pieces.sort(key=lambda t: (t[0], t[1]))
+        disp_list = [d for _, d in pieces]
+        colour_str_local = "White" if colour == chess.WHITE else "Black"
+        if disp_list:
+            return f"{colour_str_local} pieces: " + ", ".join(disp_list) + "."
+        else:
+            return f"{colour_str_local} pieces: none."
+
+    # -----------------------------------------
+    colour_str = "White" if piece_code.isupper() else "Black"
+    squares = get_squares_for_piece(board, piece_code)
+    singular = {"p": "pawn", "n": "knight", "b": "bishop", "r": "rook", "q": "queen", "k": "king"}
+    plural = {k: v + ("s" if not v.endswith("s") else "") for k, v in singular.items()}
+
+    if not squares:
+        return f"There are no {colour_str.lower()} {plural[piece_code.lower()]}."
+
+    if len(squares) == 1:
+        return f"{colour_str} {singular[piece_code.lower()]} is on {squares[0]}."
+
+    return f"{colour_str} {plural[piece_code.lower()]} are on {', '.join(squares)}."
+
+
+def describe_file_or_rank(board: chess.Board, spec: str) -> str:
+    """Return verbal description of pieces on a file (a-h) or rank (1-8)."""
+    spec = spec.strip().lower()
+    if not spec or spec not in "abcdefgh12345678":
+        return "Invalid file or rank specification."
+    pieces_on_line = []
+    for sq, pc in board.piece_map().items():
+        sq_name = chess.square_name(sq)
+        if spec in "abcdefgh" and sq_name[0] == spec:
+            pieces_on_line.append((sq_name, pc))
+        elif spec in "12345678" and sq_name[1] == spec:
+            pieces_on_line.append((sq_name, pc))
+    if not pieces_on_line:
+        line_str = f"file {spec}" if spec in "abcdefgh" else f"rank {spec}"
+        return f"No pieces on {line_str}."
+    pieces_on_line.sort(key=lambda t: (t[0][1], t[0][0]))
+    parts = []
+    for sq_name, pc in pieces_on_line:
+        colour = "White" if pc.color == chess.WHITE else "Black"
+        piece_name = chess.piece_name(pc.piece_type)
+        parts.append(f"{colour} {piece_name} on {sq_name}")
+    line_str = f"file {spec}" if spec in "abcdefgh" else f"rank {spec}"
+    return f"Pieces on {line_str}: " + "; ".join(parts) + "."
+
+
+# ---------------------------------------------------------------------------
+# Notation helpers
+# ---------------------------------------------------------------------------
+
+_NATO_FILES = {
+    "a": "alpha", "b": "bravo", "c": "charlie", "d": "delta",
+    "e": "echo", "f": "foxtrot", "g": "golf", "h": "hotel",
+}
+_ANNA_FILES = {
+    "a": "anna", "b": "bella", "c": "cesar", "d": "david",
+    "e": "eva", "f": "felix", "g": "gustav", "h": "hektor",
+}
+
+
+def format_square(square: str, style: str) -> str:
+    file = square[0]
+    rank = square[1]
+    style = style.lower()
+    if style in {"uci", "san"}:
+        return square
+    elif style == "literate":
+        return f"{file} {rank}"
+    elif style == "nato":
+        return f"{_NATO_FILES[file]} {rank}"
+    elif style == "anna":
+        return f"{_ANNA_FILES.get(file, file)} {rank}"
+    return square
+
+
+def format_piece_on_square(pc: chess.Piece, square: str, style: str) -> str:
+    piece_name = chess.piece_name(pc.piece_type)
+    square_fmt = format_square(square, style)
+    colour = "White" if pc.color == chess.WHITE else "Black"
+    return f"{colour} {piece_name} on {square_fmt}"
+
+
+# ---------------------------------------------------------------------------
+# Global Main Menu and Help System
+# ---------------------------------------------------------------------------
+
+def show_help(context_name: str):
+    """Display help for the current context."""
+    help_texts = {
+        "main_menu": [
+            "1 – Local games list",
+            "2 – Live broadcasts",
+            "3 – Settings",
+            "q – Quit program",
+            "b – Back (return to previous)"
+        ],
+        "game_selection": [
+            "<num> – open game", "n – new game", "save – save & back",
+            "r – reload PGN", "b – live broadcasts", "m – main menu",
+            "b – back (quit)", "h – help"
+        ],
+        "game_view": [
+            "Enter/next – make next main-line move", "<move> (e4,Nf3 or e2e4) – make a move",
+            "b/prev – go to previous move",
+            "p <piece> – list piece locations",
+            "s <file|rank> – list pieces on a file or rank",
+            "eval/c – Stockfish evaluation", "a – start interactive analysis panel",
+            "t – opening tree", "pg – show PGN",
+            "save – save & exit", "m – main menu", "h – help"
+        ],
+        "broadcast_menus": [
+            "<num> – select", "r – refresh", "b – back", "m – main menu", "h – help"
+        ],
+    }
+    clear_screen_and_prepare_for_new_content()
+    print(f"--- Help: {context_name} ---")
+    for line in help_texts.get(context_name, []):
+        print(line)
+    print("-"*20)
+    input("Press Enter to return...")
+
+
+def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsManager, engine):
+    """Global main menu accessible from any context. Returns when user backs out."""
+    while True:
+        clear_screen_and_prepare_for_new_content()
+        print("--- MAIN MENU ---")
+        if game_manager is not None:
+            print("1. Local games")
+        else:
+            print("(Local games unavailable in this context)")
+        print("2. Live broadcasts")
+        print("3. Settings")
+        print("q. Quit program")
+        print("h. Help  |  b. Back")
+        choice = input("Select option: ").strip().lower()
+        if choice == "1" and game_manager is not None:
+            sel_idx = show_game_selection_menu(game_manager, settings_manager, engine)
+            if isinstance(sel_idx, int):
+                play_game(game_manager, engine, sel_idx, settings_manager)
+        elif choice == "2":
+            bc_manager = BroadcastManager()
+            bc_manager.fetch_broadcasts()
+            res = show_broadcasts_menu(bc_manager)
+            # user navigates inside broadcast flows; upon return continue loop
+        elif choice == "3":
+            show_settings_menu(settings_manager)
+        elif choice == "h":
+            show_help("main_menu")
+        elif choice in ("b", "q"):
+            # 'q' from main menu quits entire program
+            if choice == "q":
+                sys.exit(0)
+            break
+        else:
+            print("Invalid option.")
+            time.sleep(0.7)
 
 
 # ---------------------------------------------------------------------------
@@ -834,11 +1142,7 @@ def main():
     time.sleep(0.5)
 
     try:
-        while True:
-            selected_game_idx = show_game_selection_menu(game_manager, settings_manager, engine)
-            if selected_game_idx is None:
-                break
-            play_game(game_manager, engine, selected_game_idx, settings_manager)
+        show_main_menu(game_manager, settings_manager, engine)
     finally:
         clear_screen_and_prepare_for_new_content()
         print("Quitting engine...")
@@ -847,4 +1151,61 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()
+
+def describe_piece_locations_formatted(board: chess.Board, piece_code: str, style: str) -> str:
+    raw = describe_piece_locations(board, piece_code)
+    # replace every square pattern with formatted square if needed when raw contains chess.square strings separated by commas.
+    # Simplistic approach: split by space, for each token that is two chars and matches square, replace.
+    words = raw.split()
+    new_words = []
+    for w in words:
+        if len(w) >=2 and w[0] in 'abcdefgh' and w[1] in '12345678':
+            sq = w.rstrip(',.')
+            formatted = format_square(sq, style)
+            w = w.replace(sq, formatted)
+        elif len(w)>=3 and w[0] in 'KQRBN' and w[1] in 'abcdefgh' and w[2] in '12345678':
+            piece_word={'K':'King','Q':'Queen','R':'Rook','B':'Bishop','N':'Knight'}[w[0]]
+            sq=w[1:3]
+            w=piece_word+' '+format_square(sq,style)
+        new_words.append(w)
+    return ' '.join(new_words)
+
+def describe_file_or_rank_formatted(board: chess.Board, spec: str, style: str) -> str:
+    raw = describe_file_or_rank(board, spec)
+    words = raw.split()
+    new_w=[]
+    for w in words:
+        core=w.strip(';,.:')
+        if len(core)==2 and core[0] in 'abcdefgh' and core[1] in '12345678':
+            formatted = format_square(core, style)
+            w = w.replace(core, formatted)
+        new_w.append(w)
+    return ' '.join(new_w)
+
+def move_to_str(board: chess.Board, move: chess.Move, style: str) -> str:
+    style = style.lower()
+    if style == "uci":
+        return move.uci()
+    san = board.san(move)
+    if style == "san":
+        return san
+
+    # Build output progressively
+    out = san
+
+    # Square names replacement first
+    for sq in {chess.square_name(move.from_square), chess.square_name(move.to_square)}:
+        out = out.replace(sq, format_square(sq, style))
+
+    if style in {"literate", "nato", "anna"}:
+        piece_map = {"K":"King", "Q":"Queen", "R":"Rook", "B":"Bishop", "N":"Knight"}
+        # Leading piece letter to word
+        if san[0] in piece_map:
+            out = piece_map[san[0]] + " " + out[1:]
+        # Capture indicator
+        if 'x' in san:
+            out = out.replace('x', ' takes ', 1)
+        # Collapse multiple spaces
+        out = re.sub(r"\s+", " ", out)
+    return out.strip() 
