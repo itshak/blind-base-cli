@@ -1,3 +1,4 @@
+MANIFEST.in
 README.md
 pyproject.toml
 blindbase/__init__.py
@@ -14,9 +15,6 @@ blindbase.egg-info/dependency_links.txt
 blindbase.egg-info/entry_points.txt
 blindbase.egg-info/requires.txt
 blindbase.egg-info/top_level.txt
-blindbase/engine/mac/stockfish
-blindbase/engine/mac/stockfish_x86
-blindbase/engine/win/stockfish.exe
 blindbase/ui/__init__.py
 blindbase/ui/accessibility.py
 blindbase/ui/board.py

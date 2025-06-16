@@ -1,8 +1,8 @@
 Metadata-Version: 2.4
 Name: blindbase
-Version: 0.4.0
+Version: 0.6
 Summary: Accessible CLI chess study tool with Stockfish analysis and  Lichess integration.
-Author-email: Alexey Streltsov <aistreltsov@outlook.com>
+Author-email: Alexey Streltsov <iitshak@gmail.com>
 License: MIT
 Project-URL: Homepage, https://github.com/itshak/blind-base-cli
 Keywords: chess,cli,accessibility,stockfish,blind,pgn
@@ -37,16 +37,39 @@ BlindBase is a text-mode chess study tool that brings Stockfish analysis, Liches
 - Broadcast streaming of live games.
 - Speech synthesis (optional) via `pyttsx3`.
 - Ships with Stockfish binaries for macOS (arm64 + x86_64) and Windows x64 – no separate download required.
+- Stand-alone executables ship with Stockfish (macOS arm64/x86_64 and Windows x64) — no separate download required, while the PyPI wheel stays slim and expects Stockfish in your PATH.
 
 ## Quick start
 
 ```bash
-pip install blindbase           # downloads wheel with embedded Stockfish
+pip install blindbase           # installs lightweight wheel (Stockfish required, see below)
 
 blindbase play games.pgn        # open PGN browser
 ```
 
+Command list appears below the board; type `a`
+
+## Quick start (continued)
+
 Command list appears below the board; type `a` to start engine analysis, `t` to view Masters moves, `m` to save.
+
+### Install Stockfish (required for pip users)
+
+The PyPI wheel is lightweight and **does not include** the Stockfish engine. Install Stockfish once and make sure it is discoverable from the shell:
+
+• **macOS** – `brew install stockfish`
+
+• **Windows** – download `stockfish_15_x64_avx2.exe` (or the `..._noavx2.exe` if your CPU lacks AVX2) from the [official site](https://stockfishchess.org/download/) and place it somewhere in your `%PATH%` (e.g. `C:\Windows\System32`).
+
+• **Linux** – `sudo apt install stockfish` or your distro's package.
+
+Alternatively, pass an explicit path:
+
+```bash
+blindbase play games.pgn --engine /full/path/to/stockfish
+```
+
+The single-file executables (`blindbase_mac_arm64`, `blindbase.exe`, …) already contain the correct engine and do **not** need this step.
 
 ## Building from source
 
@@ -96,7 +119,7 @@ Download them from the **Actions → run → Artefacts** section.
 blindbase/
  ├─ cli.py               # classic interactive UI
  ├─ app.py               # Typer entry-point
- ├─ engine/              # bundled Stockfish binaries
+ ├─ engine/              # bundled Stockfish binaries (for PyInstaller builds)
  │   ├─ mac/stockfish          (arm64)
  │   ├─ mac/stockfish_x86      (x86_64)
  │   └─ win/stockfish.exe      (win64)
@@ -117,3 +140,5 @@ Pull requests are welcome! Please open an issue first to discuss major changes.
 ## License
 
 BlindBase is licensed under the MIT License. Stockfish binaries are GPLv3; they are distributed unmodified in the `engine/` directory – see `engine/LICENSE`. By using the one-file executables you accept the terms of Stockfish's GPL.
+
+- CI builds produce single-file executables for macOS (arm64 + x86_64) and Windows x64.

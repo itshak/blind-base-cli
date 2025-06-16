@@ -25,6 +25,27 @@ import chess.engine
 import chess.pgn
 import requests
 
+# ------------------------------------------------------------------
+# Fallback: ensure move_to_str is always defined early (some frozen
+# builds seem to lose late definitions causing NameError at runtime).
+# The full featured definition remains later in the file; this minimal
+# version will be overwritten, but guarantees the symbol exists when
+# functions defined earlier reference it.
+# ------------------------------------------------------------------
+
+def _basic_move_to_str(board: 'chess.Board', move: 'chess.Move', style: str) -> str:  # noqa: F821
+    """Simple SAN/ UCI fallback in case the full version is not loaded yet."""
+    style = (style or "san").lower()
+    if style == "uci":
+        return move.uci()
+    try:
+        return board.san(move)
+    except Exception:
+        return move.uci()
+
+# Expose name for early references; later full definition will overwrite.
+move_to_str = _basic_move_to_str
+
 from blindbase.settings import SettingsManager
 from blindbase.storage import GameManager
 from blindbase.broadcast import BroadcastManager, stream_game_pgn
@@ -1069,7 +1090,7 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
                     is_broadcast=True,
                     broadcast_id=bc_manager.selected_broadcast["id"],
                     round_id=bc_manager.selected_round["id"],
-                    game_id=res.headers.get("Site", "").split("/")[-1],
+                    game_id=getattr(res, "game_id", res.headers.get("Site", "").split("/")[-1]),
                 )
             # Otherwise (BACK/None), simply continue to show main menu
         elif choice == "3":
@@ -1174,7 +1195,7 @@ def main():
                             is_broadcast=True,
                             broadcast_id=broadcast_manager.selected_broadcast["id"],
                             round_id=broadcast_manager.selected_round["id"],
-                            game_id=selected_game.headers.get("Site", "").split("/")[-1],
+                            game_id=getattr(selected_game, "game_id", selected_game.headers.get("Site", "").split("/")[-1]),
                         )
                         # After the game finishes, this loop continues, which will re-show the broadcast list.
                         # This fixes the bug where exiting a game went to the wrong menu.

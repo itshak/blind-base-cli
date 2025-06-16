@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import queue
 import re
 import threading
@@ -133,7 +134,9 @@ class BroadcastManager:
             if game is None:
                 break
             site = game.headers.get("Site", "")
-            game_id_match = re.search(r"https://lichess.org/(\w+)", site)
+            # Extract the standard 8-char Lichess game ID (letters+digits) that appears
+            # right after the domain, ignoring any trailing text like ", Norway".
+            game_id_match = re.search(r"https://lichess.org/([A-Za-z0-9]{8})", site)
             if game_id_match:
                 game_id = game_id_match.group(1)
                 game.game_id = game_id  # type: ignore[attr-defined]
@@ -151,7 +154,10 @@ def _pgn_stream_url(round_id: str, game_id: str) -> str:
     According to the Lichess API docs, the path does *not* include the
     broadcast ID.
     """
-    return f"{BROADCAST_API}/round/{round_id}/game/{game_id}.pgn/stream"
+    # Ensure the game_id is safely URL-encoded (handles spaces, commas, etc.)
+    from urllib.parse import quote
+    safe_game_id = quote(game_id, safe="")
+    return f"{BROADCAST_API}/round/{round_id}/game/{safe_game_id}.pgn/stream"
 
 
 def stream_game_pgn(
@@ -165,10 +171,28 @@ def stream_game_pgn(
     This is a drop-in replacement for the original implementation, but with
     the corrected URL format.
     """
-    url = _pgn_stream_url(round_id, game_id)
+    stream_url = _pgn_stream_url(round_id, game_id)
     try:
-        with requests.get(url, stream=True, timeout=10) as response:
-            response.raise_for_status()
+        with requests.get(stream_url, stream=True, timeout=10) as response:
+            try:
+                response.raise_for_status()
+            except requests.HTTPError as http_err:
+                # If the stream endpoint returns 404, the game is likely finished.
+                # Fall back to fetching the full PGN once from the non-stream endpoint.
+                if response.status_code == 404:
+                    fallback_url = stream_url.replace(".pgn/stream", ".pgn")
+                    try:
+                        fallback_resp = requests.get(fallback_url, timeout=10)
+                        fallback_resp.raise_for_status()
+                        update_queue.put(fallback_resp.text)
+                        return  # no need to keep streaming
+                    except requests.RequestException as exc:
+                        if os.environ.get("BB_VERBOSE"):
+                            print(f"Error fetching finished game PGN: {exc}")
+                        return
+                else:
+                    raise http_err
+
             pgn = ""
             for line in response.iter_lines(decode_unicode=True):
                 if stop_event.is_set():
@@ -181,4 +205,5 @@ def stream_game_pgn(
             if pgn:
                 update_queue.put(pgn)
     except Exception as exc:
-        print(f"Error streaming PGN: {exc}") 
+        if os.environ.get("BB_VERBOSE"):
+            print(f"Error streaming PGN: {exc}")
