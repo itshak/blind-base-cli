@@ -1,0 +1,83 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+            stockfish_path: engine/mac/stockfish
+            exe_name: blindbase_mac_arm64
+          - os: macos-13
+            arch: x86_64
+            stockfish_path: engine/mac/stockfish_x86
+            exe_name: blindbase_mac_x86_64
+          - os: windows-latest
+            arch: x86_64
+            stockfish_path: engine/win/stockfish.exe
+            exe_name: blindbase_win_x86_64.exe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Verify Stockfish binary exists
+        run: |
+          if [ ! -f "${{ matrix.stockfish_path }}" ]; then
+            echo "Stockfish binary missing at ${{ matrix.stockfish_path }}" >&2
+            exit 1
+          fi
+
+      - name: Build executable with PyInstaller
+        run: |
+          dest_name=$(basename "${{ matrix.stockfish_path }}")
+          pyinstaller --onefile --name "${{ matrix.exe_name }}" \
+            --add-data "${{ matrix.stockfish_path }}:engine/${dest_name}" \
+            -p . -m blindbase.app
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.exe_name }}
+          path: dist/${{ matrix.exe_name }}*
+
+  publish-pypi:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build wheel & sdist (without binaries)
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.ref_name }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+          python -m build --sdist --wheel
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.8.14
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true

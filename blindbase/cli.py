@@ -16,6 +16,7 @@ import os
 from datetime import datetime
 from urllib.parse import quote
 from pathlib import Path
+import platform
 import re
 import shutil
 import io
@@ -1123,11 +1124,26 @@ def main():
     try:
         user_cfg_path = settings_manager.get("engine_path") or ""
 
-        # Default bundled path (works for PyInstaller one-file or normal source run)
+        # Determine correct binary name for this platform
+        sys_plat = sys.platform
+        machine = platform.machine().lower()
+        bin_name = "stockfish"  # fallback
+        if sys_plat.startswith("darwin"):
+            if "arm" in machine or "aarch" in machine:
+                bin_name = "stockfish"
+            else:
+                bin_name = "stockfish_x86"
+        elif sys_plat.startswith("linux"):
+            # provide reasonable defaults; users typically supply their own on Linux
+            bin_name = "stockfish"
+        elif sys_plat.startswith("win"):
+            bin_name = "stockfish.exe"
+
+        # Default bundled path (PyInstaller or source)
         if getattr(sys, "_MEIPASS", None):  # PyInstaller temp dir
-            default_path = Path(sys._MEIPASS) / "resources" / "stockfish"
+            default_path = Path(sys._MEIPASS) / "resources" / bin_name
         else:
-            default_path = Path(__file__).resolve().parent / "resources" / "stockfish"
+            default_path = Path(__file__).resolve().parent / "resources" / bin_name
 
         # Pick whichever path is non-empty
         candidate_path = Path(user_cfg_path) if user_cfg_path else default_path
