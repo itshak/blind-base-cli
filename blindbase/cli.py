@@ -159,7 +159,7 @@ def show_settings_menu(settings_manager: SettingsManager):
         print(f"7. Default PGN Filename (current: {settings_manager.get('default_pgn_filename')})")
         print(f"8. Games Per Page in Menu (current: {settings_manager.get('games_per_page')})")
         print(f"9. Move notation style (current: {settings_manager.get('move_notation')})")
-        print("10. Back to Game Selection")
+        print("10. Go Back")
         choice = input("\nSelect option: ").strip()
         if choice == "1":
             try:
@@ -171,6 +171,7 @@ def show_settings_menu(settings_manager: SettingsManager):
                 settings_manager.set("lichess_moves_count", max(0, min(10, val)))
             except ValueError:
                 print("Invalid number.")
+                input("Press Enter to continue...")
         elif choice == "2":
             try:
                 val = int(
@@ -181,6 +182,7 @@ def show_settings_menu(settings_manager: SettingsManager):
                 settings_manager.set("engine_lines_count", max(1, min(10, val)))
             except ValueError:
                 print("Invalid number.")
+                input("Press Enter to continue...")
         elif choice == "3":
             settings_manager.set("show_chessboard", not settings_manager.get("show_chessboard"))
         elif choice == "4":
@@ -193,6 +195,7 @@ def show_settings_menu(settings_manager: SettingsManager):
                 settings_manager.set("analysis_block_padding", max(0, min(5, val)))
             except ValueError:
                 print("Invalid number.")
+                input("Press Enter to continue...")
         elif choice == "5":
             val = input(
                 f"New engine path (current {settings_manager.get('engine_path')}): "
@@ -221,6 +224,7 @@ def show_settings_menu(settings_manager: SettingsManager):
                 settings_manager.set("games_per_page", max(5, min(50, val)))
             except ValueError:
                 print("Invalid number.")
+                input("Press Enter to continue...")
         elif choice == "9":
             print("Select notation style:")
             print("1. uci   (e2e4)")
@@ -238,6 +242,7 @@ def show_settings_menu(settings_manager: SettingsManager):
             break
         else:
             print("Invalid option.")
+            input("Press Enter to continue...")
         if choice in [str(i) for i in range(1, 10)]:
             print("Setting updated.")
             time.sleep(0.7)
@@ -279,6 +284,7 @@ def show_games_menu(broadcast_manager):
             continue
         else:
             print("Invalid option.")
+            input("Press Enter to continue...")
 
 def show_rounds_menu(broadcast_manager):
     rounds = broadcast_manager.fetch_rounds(broadcast_manager.selected_broadcast)
@@ -322,6 +328,7 @@ def show_rounds_menu(broadcast_manager):
             continue
         else:
             print("Invalid option.")
+            input("Press Enter to continue...")
 
 def show_broadcasts_menu(broadcast_manager):
     while True:
@@ -357,6 +364,7 @@ def show_broadcasts_menu(broadcast_manager):
             continue
         else:
             print("Invalid option.")
+            input("Press Enter to continue...")
 
 def show_game_selection_menu(game_manager, settings_manager, engine):
     global current_games_page
@@ -450,50 +458,7 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
             print("\033[2KPGN file reloaded.")
             time.sleep(1)
         elif action == "b":
-            broadcast_manager = BroadcastManager()
-            broadcast_manager.fetch_broadcasts()
-            selected_game = show_broadcasts_menu(broadcast_manager)
-            while selected_game:
-                # Enter game view loop; upon exit, return to games list
-                if not hasattr(selected_game, 'game_id'):
-                    print("Warning: game_id missing; opening PGN without live updates.")
-                    time.sleep(0.7)
-                    from blindbase.storage import GameManager as _GM
-                    import tempfile, os as _os
-
-                    temp_pgn = _os.path.join(tempfile.gettempdir(), "temp_broadcast_game.pgn")
-                    gm_tmp = _GM(temp_pgn)
-                    gm_tmp.games = [selected_game]
-                    gm_tmp.current_game_index = 0
-                    navigator = GameNavigator(selected_game)
-                    play_game(gm_tmp, engine, 0, settings_manager)
-                else:
-                    navigator = GameNavigator(selected_game)
-                    play_game(
-                        None,
-                        engine,
-                        navigator,
-                        settings_manager,
-                        is_broadcast=True,
-                        broadcast_id=broadcast_manager.selected_broadcast["id"],
-                        round_id=broadcast_manager.selected_round["id"],
-                        game_id=selected_game.game_id,
-                        game_identifier=(selected_game.headers["White"], selected_game.headers["Black"]),
-                    )
-                # After exiting game view, show games list again
-                selected_game = show_games_menu(broadcast_manager)
-                if selected_game == "BACK":
-                    # user went back to rounds list; let user continue there
-                    res_from_rounds = show_rounds_menu(broadcast_manager)
-                    if res_from_rounds == "BACK":
-                        # user went back to tournaments list; show_broadcasts_menu again
-                        selected_game = show_broadcasts_menu(broadcast_manager)
-                        continue  # restart loop with new selection or None
-                    else:
-                        # res_from_rounds could be a game; loop will iterate again
-                        selected_game = res_from_rounds
-                        continue
-            is_first_call_of_session = True
+            return "BROADCAST"
         elif action in ("f", "next"):
             total_games = len(game_manager.games)
             total_pages = (total_games + games_per_page - 1) // games_per_page
@@ -580,7 +545,7 @@ def play_game(
     # Track how many lines were printed in previous iteration so we can clear them
     display_height = 0  # dynamic, ensures compact output
     if is_broadcast:
-        navigator = navigator_or_index
+        navigator = GameNavigator(navigator_or_index)
         game_index = None
         update_queue = queue.Queue()
         stop_event = threading.Event()
@@ -651,13 +616,15 @@ def play_game(
                 white_time, black_time = navigator.get_clocks()
                 print(f"\033[2KWhite clock: {white_time}, Black clock: {black_time}")
                 lines_printed_this_iteration += 1
-            current_comment = navigator.current_node.comment
+            current_comment = navigator.current_node.comment or ""
             if current_comment:
-                comment_display = (
-                    current_comment[:70] + "..." if len(current_comment) > 70 else current_comment
-                )
-                print(f"\033[2KComment: {comment_display}")
-                lines_printed_this_iteration += 1
+                # Remove clock tags from comment
+                import re
+                cleaned = re.sub(r"\[%clk\s+\d+:\d{2}:\d{2}\]", "", current_comment).strip()
+                if cleaned:  # Only show if something besides clock remains
+                    comment_display = cleaned[:70] + "..." if len(cleaned) > 70 else cleaned
+                    print(f"\033[2KComment: {comment_display}")
+                    lines_printed_this_iteration += 1
             if board.is_game_over():
                 print(f"\033[2KGame over: {board.result()}")
                 lines_printed_this_iteration += 1
@@ -694,6 +661,12 @@ def play_game(
             if command.lower() == "h":
                 show_help("game_view")
                 continue
+
+            if command.lower() == "settings":
+                show_settings_menu(settings_manager)
+                # After returning from settings, the loop will redraw the board, applying changes.
+                continue
+
             if command.lower() == "q":
                 if not is_broadcast and navigator.has_changes:
                     confirm_quit = input("Unsaved changes. Quit anyway? (y/N): ").strip().lower()
@@ -882,7 +855,12 @@ def play_game(
                     time.sleep(1)
                 elif not success and command != "":
                     print("Invalid move or command.")
-                    time.sleep(1)
+                    input("Press Enter to continue...")
+    except Exception as e:
+        # Log unexpected errors but avoid crashing the whole program
+        print(f"Unexpected error: {e}")
+        import traceback; traceback.print_exc()
+        input("Press Enter to continue...")
     finally:
         if is_broadcast:
             stop_event.set()
@@ -1039,8 +1017,9 @@ def show_help(context_name: str):
             "b – back (quit)", "h – help"
         ],
         "game_view": [
-            "Enter/next – make next main-line move", "<move> (e4,Nf3 or e2e4) – make a move",
+            "Enter/next – make next main-line move",
             "b/prev – go to previous move",
+            "<move> (e4,Nf3 or e2e4) – make a move",
             "p <piece> – list piece locations",
             "s <file|rank> – list pieces on a file or rank",
             "eval/c – Stockfish evaluation", "a – start interactive analysis panel",
@@ -1081,7 +1060,18 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
             bc_manager = BroadcastManager()
             bc_manager.fetch_broadcasts()
             res = show_broadcasts_menu(bc_manager)
-            # user navigates inside broadcast flows; upon return continue loop
+            if isinstance(res, chess.pgn.Game):
+                play_game(
+                    game_manager,
+                    engine,
+                    res,
+                    settings_manager,
+                    is_broadcast=True,
+                    broadcast_id=bc_manager.selected_broadcast["id"],
+                    round_id=bc_manager.selected_round["id"],
+                    game_id=res.headers.get("Site", "").split("/")[-1],
+                )
+            # Otherwise (BACK/None), simply continue to show main menu
         elif choice == "3":
             show_settings_menu(settings_manager)
         elif choice == "h":
@@ -1102,51 +1092,108 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
 
 def main():
     """Launch the classic text CLI."""
-
-    print("Enhanced Chess Analyzer – Initializing...")
-    pgn_file_cli_arg = sys.argv[1] if len(sys.argv) > 1 else None
-    stockfish_cli_override = sys.argv[2] if len(sys.argv) >= 3 else None
-
     settings_manager = SettingsManager()
-
-    stockfish_path = (
-        stockfish_cli_override if stockfish_cli_override else settings_manager.get("engine_path")
-    )
-
-    pgn_dir = settings_manager.get("pgn_file_directory")
-    if not os.path.isabs(pgn_dir) and pgn_dir != ".":
-        pgn_dir = os.path.join(os.getcwd(), pgn_dir)
-    os.makedirs(pgn_dir, exist_ok=True)
-
-    pgn_file_to_load = (
-        pgn_file_cli_arg if pgn_file_cli_arg else settings_manager.get("default_pgn_filename")
-    )
-    actual_pgn_path = (
-        pgn_file_to_load if os.path.isabs(pgn_file_to_load) else os.path.join(pgn_dir, pgn_file_to_load)
-    )
-
-    print(f"Using PGN: {actual_pgn_path}")
-    print(f"Using Engine: {stockfish_path}")
+    # Engine setup
+    engine = None
     try:
-        engine = chess.engine.SimpleEngine.popen_uci(stockfish_path)
-    except FileNotFoundError:
-        print(f"Error: Stockfish engine not found at '{stockfish_path}'.")
-        sys.exit(1)
+        engine_path = settings_manager.get("engine_path")
+        if engine_path and os.path.exists(engine_path):
+            engine = chess.engine.SimpleEngine.popen_uci(engine_path)
+        else:
+            print("INFO: Chess engine not configured or found.")
     except Exception as e:
-        print(f"Error initializing Stockfish engine: {e}")
-        sys.exit(1)
+        print(f"Error loading chess engine: {e}")
+        time.sleep(2)
+
+    # PGN file setup
+    pgn_file_provided = len(sys.argv) > 1 and sys.argv[1].lower().endswith('.pgn')
+    if pgn_file_provided:
+        # If a PGN file is passed as an argument, use it directly.
+        actual_pgn_path = sys.argv[1]
+        if not os.path.exists(actual_pgn_path):
+            print(f"Error: PGN file not found at {actual_pgn_path}")
+            sys.exit(1)
+    else:
+        # Otherwise, use the default PGN file from settings.
+        pgn_dir = settings_manager.get("pgn_file_directory")
+        if not os.path.isdir(pgn_dir):
+            os.makedirs(pgn_dir, exist_ok=True)
+        actual_pgn_path = os.path.join(pgn_dir, settings_manager.get("default_pgn_filename"))
+
+    if not os.path.exists(actual_pgn_path):
+        # Create a new empty file with a placeholder game if none exists.
+        with open(actual_pgn_path, "w") as f:
+            board = chess.Board()
+            game = chess.pgn.Game()
+            game.setup(board)
+            game.headers["Event"] = "New Game"
+            f.write(str(game))
+        print(f"Created new PGN file at: {actual_pgn_path}")
+        time.sleep(1)
 
     game_manager = GameManager(actual_pgn_path)
+    
     clear_screen_and_prepare_for_new_content(is_first_draw=True)
-    print("Welcome to Enhanced Chess Analyzer!")
+    print("Welcome to Blind-Base CLI!")
     time.sleep(0.5)
 
-    try:
+    # If no PGN file argument was provided, start with the Main Menu instead of the game list.
+    if not pgn_file_provided:
         show_main_menu(game_manager, settings_manager, engine)
-    finally:
+        # After the user backs out of the main menu they intend to quit.
         clear_screen_and_prepare_for_new_content()
         print("Quitting engine...")
-        engine.quit()
+        if engine:
+            engine.quit()
+        return
+
+    try:
+        # PGN argument supplied – start directly in the game selection loop.
+        while True:
+            result = show_game_selection_menu(game_manager, settings_manager, engine)
+
+            if result is None:  # User chose to quit from the game selection menu.
+                break
+            
+            elif result == "BROADCAST":
+                # User wants to see broadcasts. Enter the broadcast browsing loop.
+                broadcast_manager = BroadcastManager()
+                broadcast_manager.fetch_broadcasts()
+                
+                # This inner loop lets the user browse broadcasts, rounds, and games.
+                # It only exits when the user selects a game to play or backs out to the top level.
+                while True: 
+                    selected_game = show_broadcasts_menu(broadcast_manager)
+                    if selected_game:
+                        # A broadcast game was selected via BROADCAST signal, play it.
+                        play_game(
+                            game_manager, # Note: passing local game_manager, may not be ideal
+                            engine,
+                            selected_game,
+                            settings_manager,
+                            is_broadcast=True,
+                            broadcast_id=broadcast_manager.selected_broadcast["id"],
+                            round_id=broadcast_manager.selected_round["id"],
+                            game_id=selected_game.headers.get("Site", "").split("/")[-1],
+                        )
+                        # After the game finishes, this loop continues, which will re-show the broadcast list.
+                        # This fixes the bug where exiting a game went to the wrong menu.
+                    else:
+                        # The user backed out of the broadcast menu. We break this inner loop
+                        # to return to the main game selection menu.
+                        break
+            
+            else:  # The result is a game index from the local PGN file.
+                play_game(game_manager, engine, result, settings_manager)
+                # After the game, the main `while` loop continues, which will re-show the local game list.
+                # This also fixes the bug of returning to the wrong menu.
+
+    finally:
+        # Cleanup before exiting the program.
+        clear_screen_and_prepare_for_new_content()
+        print("Quitting engine...")
+        if engine:
+            engine.quit()
         print("Program exited.")
 
 
@@ -1184,6 +1231,7 @@ def describe_file_or_rank_formatted(board: chess.Board, spec: str, style: str) -
     return ' '.join(new_w)
 
 def move_to_str(board: chess.Board, move: chess.Move, style: str) -> str:
+    """Return a formatted string for a move, given the board context."""
     style = style.lower()
     if style == "uci":
         return move.uci()

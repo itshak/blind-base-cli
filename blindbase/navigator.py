@@ -202,9 +202,22 @@ class GameNavigator:
                 if current.comment:
                     last_black_comment = current.comment
             current = current.parent
-        clk_pattern = r"\{\[%clk (\d+:\d+:\d+)\]\}"
-        white_clk = re.search(clk_pattern, last_white_comment)
-        black_clk = re.search(clk_pattern, last_black_comment)
-        white_time = white_clk.group(1) if white_clk else "N/A"
-        black_time = black_clk.group(1) if black_clk else "N/A"
-        return white_time, black_time 
+        # Extract latest clock comments, updating only the side that just moved.
+        clk_pattern = r"\[%clk\s+(\d+:\d{2}:\d{2})\]"
+        white_time = "-"
+        black_time = "-"
+        node = self.current_node  # start at the last played move
+        while node is not None:
+            comment = node.comment or ""
+            m = re.search(clk_pattern, comment)
+            if m:
+                t_val = m.group(1)
+                side = chess.WHITE if node.ply() % 2 == 1 else chess.BLACK
+                if side == chess.WHITE and white_time == "-":
+                    white_time = t_val
+                elif side == chess.BLACK and black_time == "-":
+                    black_time = t_val
+                if white_time != "-" and black_time != "-":
+                    break
+            node = node.parent
+        return white_time, black_time
