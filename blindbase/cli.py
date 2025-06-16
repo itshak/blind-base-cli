@@ -1139,11 +1139,18 @@ def main():
         elif sys_plat.startswith("win"):
             bin_name = "stockfish.exe"
 
-        # Default bundled path (PyInstaller or source)
+        default_path = None
         if getattr(sys, "_MEIPASS", None):  # PyInstaller temp dir
-            default_path = Path(sys._MEIPASS) / "resources" / bin_name
+            # Try the path used in workflow: engine/<binary>
+            cand1 = Path(sys._MEIPASS) / "engine" / bin_name
+            cand2 = Path(sys._MEIPASS) / bin_name  # fallback same dir
+            default_path = cand1 if cand1.exists() else cand2
         else:
-            default_path = Path(__file__).resolve().parent / "resources" / bin_name
+            # Running from source – look inside engine/<platform> folder relative to package root
+            pkg_root = Path(__file__).resolve().parent
+            cand1 = pkg_root / "engine" / ("mac" if sys_plat.startswith("darwin") else "win") / bin_name
+            cand2 = pkg_root / "engine" / bin_name
+            default_path = cand1 if cand1.exists() else cand2
 
         # Pick whichever path is non-empty
         candidate_path = Path(user_cfg_path) if user_cfg_path else default_path
