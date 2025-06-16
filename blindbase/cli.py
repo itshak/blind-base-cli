@@ -1153,13 +1153,15 @@ def main():
             cand2 = pkg_root / "engine" / bin_name
             default_path = cand1 if cand1.exists() else cand2
 
-        # Pick whichever path is non-empty
+        # Prefer user-configured path but fall back if it does not point to a file
         candidate_path = Path(user_cfg_path) if user_cfg_path else default_path
+        if not candidate_path.is_file():
+            candidate_path = default_path
 
-        if candidate_path.exists():
+        if candidate_path.is_file():
             engine = chess.engine.SimpleEngine.popen_uci(str(candidate_path))
         else:
-            print("INFO: Chess engine not found. Configure Engine Path in Settings menu.")
+            print("INFO: Chess engine not found. Configure engine path in settings menu.")
     except Exception as e:
         print(f"Error loading chess engine: {e}")
         time.sleep(2)
