@@ -823,7 +823,7 @@ def play_game(
                 success, _ = navigator.make_move("")
                 if not success:
                     print("No main line move available or already at end.")
-                    time.sleep(1)
+                    input("Press Enter to continue...")
 
             elif command.lower() in ("pg", "pgn"):
                 clear_screen_and_prepare_for_new_content()
@@ -878,7 +878,7 @@ def play_game(
                     print(f"Move made: {display_move}")
                 elif command == "" and not success:
                     print("No main line move available or already at end.")
-                    time.sleep(1)
+                    input("Press Enter to continue...")
                 elif not success and command != "":
                     print("Invalid move or command.")
                     input("Press Enter to continue...")
