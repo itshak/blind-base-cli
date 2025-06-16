@@ -1141,10 +1141,11 @@ def main():
 
         default_path = None
         if getattr(sys, "_MEIPASS", None):  # PyInstaller temp dir
-            # Try the path used in workflow: engine/<binary>
-            cand1 = Path(sys._MEIPASS) / "engine" / bin_name
-            cand2 = Path(sys._MEIPASS) / bin_name  # fallback same dir
-            default_path = cand1 if cand1.exists() else cand2
+            subdir = "mac" if sys_plat.startswith("darwin") else "win"
+            cand1 = Path(sys._MEIPASS) / "engine" / subdir / bin_name  # engine/mac/<bin>
+            cand2 = Path(sys._MEIPASS) / "engine" / bin_name          # engine/<bin>
+            cand3 = Path(sys._MEIPASS) / bin_name                       # root dir
+            default_path = next((p for p in (cand1, cand2, cand3) if p.exists()), cand3)
         else:
             # Running from source – look inside engine/<platform> folder relative to package root
             pkg_root = Path(__file__).resolve().parent
