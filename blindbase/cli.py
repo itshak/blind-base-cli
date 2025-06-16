@@ -15,6 +15,7 @@ import sys
 import os
 from datetime import datetime
 from urllib.parse import quote
+from pathlib import Path
 import re
 import shutil
 import io
@@ -1117,11 +1118,21 @@ def main():
     # Engine setup
     engine = None
     try:
-        engine_path = settings_manager.get("engine_path")
-        if engine_path and os.path.exists(engine_path):
-            engine = chess.engine.SimpleEngine.popen_uci(engine_path)
+        user_cfg_path = settings_manager.get("engine_path") or ""
+
+        # Default bundled path (works for PyInstaller one-file or normal source run)
+        if getattr(sys, "_MEIPASS", None):  # PyInstaller temp dir
+            default_path = Path(sys._MEIPASS) / "resources" / "stockfish"
         else:
-            print("INFO: Chess engine not configured or found.")
+            default_path = Path(__file__).resolve().parent / "resources" / "stockfish"
+
+        # Pick whichever path is non-empty
+        candidate_path = Path(user_cfg_path) if user_cfg_path else default_path
+
+        if candidate_path.exists():
+            engine = chess.engine.SimpleEngine.popen_uci(str(candidate_path))
+        else:
+            print("INFO: Chess engine not found. Configure Engine Path in Settings menu.")
     except Exception as e:
         print(f"Error loading chess engine: {e}")
         time.sleep(2)
