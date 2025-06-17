@@ -563,7 +563,7 @@ def play_game(
         game_index = None
         update_queue = queue.Queue()
         stop_event = threading.Event()
-        streaming_thread = threading.Thread(
+        streaming_thread = threading.Thread(daemon=True,
             target=stream_game_pgn,
             args=(round_id, game_id, update_queue, stop_event),
         )
@@ -585,11 +585,14 @@ def play_game(
             sys.stdout.flush()
             lines_printed_this_iteration = 0
             board = navigator.get_current_board()
-            title = (
-                "Broadcast Game"
-                if is_broadcast
-                else f"Game {game_index + 1}: {navigator.working_game.headers.get('White','N/A')} vs {navigator.working_game.headers.get('Black','N/A')}"
-            )
+            if is_broadcast:
+                white = navigator.working_game.headers.get("White", "Unknown")
+                black = navigator.working_game.headers.get("Black", "Unknown")
+                result = navigator.working_game.headers.get("Result", "*")
+                res_part = f" [{result}]" if result and result != "*" else ""
+                title = f"{white} vs {black}{res_part} (Broadcast)"
+            else:
+                title = f"Game {game_index + 1}: {navigator.working_game.headers.get('White','N/A')} vs {navigator.working_game.headers.get('Black','N/A')}"
             print("\033[2K" + title)
             lines_printed_this_iteration += 1
             if settings_manager.get("show_chessboard"):
@@ -710,7 +713,7 @@ def play_game(
                     print("Enter the line number to follow or 'b' to go back")
                     stop_event_analyze = threading.Event()
                     shared_pv: dict[int, chess.Move] = {}
-                    analysis_thread_instance = threading.Thread(
+                    analysis_thread_instance = threading.Thread(daemon=True,
                         target=analysis_thread_refined,
                         args=(engine, board.copy(), stop_event_analyze, settings_manager, shared_pv)
                     )
@@ -881,7 +884,7 @@ def play_game(
     finally:
         if is_broadcast:
             stop_event.set()
-            streaming_thread.join()
+            # No join; daemon thread will exit automatically
 
 
 # ---------------------------------------------------------------------------
@@ -1112,7 +1115,8 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
                         engine.quit()
                     except Exception:
                         pass
-                sys.exit(0)
+                import os
+                os._exit(0)
             break
         else:
             print("Invalid option.")
