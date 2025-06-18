@@ -25,14 +25,17 @@ UNICODE_PIECES = {
 }
 
 
-def render_board(board: chess.Board, use_unicode: bool = True) -> list[Text]:
+def render_board(board: chess.Board, use_unicode: bool = True, *, flipped: bool = False) -> list[Text]:
     """Return list of Text rows to print for *board*."""
     left_pad = 0  # left align board with other content
 
     rows: list[Text] = []
-    for rank in range(7, -1, -1):
+    rank_iter = range(8) if flipped else range(7, -1, -1)
+    file_iter_template = list(range(7, -1, -1)) if flipped else list(range(8))
+    for rank in rank_iter:
         line = Text(" " * left_pad)
-        for file in range(8):
+        file_iter = file_iter_template
+        for file in file_iter:
             square = chess.square(file, rank)
             piece = board.piece_at(square)
             if piece:
@@ -44,8 +47,9 @@ def render_board(board: chess.Board, use_unicode: bool = True) -> list[Text]:
                 glyph = " "
 
             is_dark_square = (file + rank) % 2 == 1
-            # Swap colours so that d1 becomes light square (light and dark reversed)
-            bg = "#EEEED2" if is_dark_square else "#769656"
+            # Fixed light/dark colours regardless of orientation so flipping board does not invert colours
+            light_col, dark_col = "#769656", "#EEEED2"
+            bg = dark_col if is_dark_square else light_col
             if piece:
                 if piece.color == chess.WHITE:
                     fg_style = "bold white"

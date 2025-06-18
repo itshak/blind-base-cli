@@ -50,6 +50,14 @@ def _basic_move_to_str(board: 'chess.Board', move: 'chess.Move', style: str) -> 
 move_to_str = _basic_move_to_str
 
 from blindbase.settings import SettingsManager
+
+# Global board orientation flag: False => White side, True => Black side
+BOARD_FLIPPED = False
+
+def flip_board_orientation():
+    """Toggle global board orientation flag."""
+    global BOARD_FLIPPED
+    BOARD_FLIPPED = not BOARD_FLIPPED
 from blindbase.storage import GameManager
 from blindbase.broadcast import BroadcastManager, stream_game_pgn
 from blindbase.navigator import GameNavigator
@@ -411,14 +419,11 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
             print(
                 f"\033[2KTotal games: {total_games}. Displaying {start_index+1}-{end_index} (Page {current_games_page+1} of {total_pages})"
             )
-            print(
-                f"\033[2KCurrent selection: {game_manager.current_game_index + 1 if game_manager.games else 'N/A'}"
-            )
             print("\033[2K--------------------")
             for i in range(start_index, start_index + games_per_page):
                 if i < total_games:
                     game = game_manager.games[i]
-                    marker = ">>> " if i == game_manager.current_game_index else "    "
+                    marker = ""
                     white = game.headers.get("White", "N/A")[:15]
                     black = game.headers.get("Black", "N/A")[:15]
                     result = game.headers.get("Result", "*")
@@ -426,7 +431,7 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
                     event_short = game.headers.get("Event", "")[:20]
                     event_str = f" ({event_short})" if event_short else ""
                     print(
-                        f"\033[2K{marker}{i+1:3d}. {white} vs {black} [{result}] {date}{event_str}"
+                        f"\033[2K{marker}{i+1}. {white} vs {black} [{result}] {date}{event_str}"
                     )
                 else:
                     print("\033[2K")
@@ -435,7 +440,6 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
                 "'n'(new)",
                 "'s'(set)",
                 "'r'(reload)",
-                "'b'(broadcasts)",
             ]
             if total_pages > 1:
                 if current_games_page > 0:
@@ -443,7 +447,7 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
                 if current_games_page < total_pages - 1:
                     cmd_list.append("'f'(next page)")
             cmd_list.extend(["'d <num>'(del)", "'q'(quit)"])
-            print(f"\033[2KCmds: {', '.join(cmd_list)}")
+            # Command list moved to help menu
         print("\033[2KCommand (h for help): ", end="", flush=True)
         choice = input().strip().lower()
         if choice == 'm':
@@ -471,9 +475,7 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
         elif action == "r":
             game_manager.load_games()
             print("\033[2KPGN file reloaded.")
-            time.sleep(1)
-        elif action == "b":
-            return "BROADCAST"
+            input("Press Enter to continue...")
         elif action in ("f", "next"):
             total_games = len(game_manager.games)
             total_pages = (total_games + games_per_page - 1) // games_per_page
@@ -481,17 +483,17 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
                 current_games_page += 1
             else:
                 print("\033[2KAlready on the last page or no multiple pages.")
-                time.sleep(0.5)
+                input("Press Enter to continue...")
         elif action in ("p", "prev"):
             if total_pages > 1 and current_games_page > 0:
                 current_games_page -= 1
             else:
                 print("\033[2KAlready on the first page or no multiple pages.")
-                time.sleep(0.5)
+                input("Press Enter to continue...")
         elif action == "d" and len(cmd_parts) > 1 and cmd_parts[1].isdigit():
             if not game_manager.games:
                 print("\033[2KNo games to delete.")
-                time.sleep(1)
+                input("Press Enter to continue...")
                 continue
             game_num_to_delete_1_indexed = int(cmd_parts[1])
             game_num_to_delete_0_indexed = game_num_to_delete_1_indexed - 1
@@ -518,14 +520,14 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
                         print("\033[2KPGN file updated.")
                     else:
                         print("\033[2KError updating PGN file after deletion.")
-                    time.sleep(1)
+                    input("Press Enter to continue...")
             else:
                 print("\033[2KInvalid game number for deletion.")
-                time.sleep(1)
+                input("Press Enter to continue...")
         elif action.isdigit():
             if not game_manager.games:
                 print("\033[2KNo games to view.")
-                time.sleep(1)
+                input("Press Enter to continue...")
                 continue
             game_num_to_view_1_indexed = int(action)
             game_num_to_view_0_indexed = game_num_to_view_1_indexed - 1
@@ -534,7 +536,7 @@ def show_game_selection_menu(game_manager, settings_manager, engine):
                 return game_num_to_view_0_indexed
             else:
                 print("\033[2KInvalid game number.")
-                time.sleep(1)
+                input("Press Enter to continue...")
         else:
             # Note: in-game commands like 't' (Masters tree) and 'a' (analysis) are handled inside play_game(), not here.
             pass
@@ -573,7 +575,7 @@ def play_game(
         game_index = navigator_or_index
         if not game_manager.games or not (0 <= game_index < len(game_manager.games)):
             print("Invalid game selection or no games available.")
-            time.sleep(1)
+            input("Press Enter to continue...")
             return
         original_pgn_game = game_manager.games[game_index]
         navigator = GameNavigator(original_pgn_game)
@@ -608,7 +610,8 @@ def play_game(
                 if not screen_reader_mode():
                     from blindbase.ui.board import render_board, get_console
                     console = get_console()
-                    for text_row in render_board(board):
+                    from blindbase.cli import BOARD_FLIPPED  # self-import safe due to runtime import
+                    for text_row in render_board(board, flipped=BOARD_FLIPPED):
                         console.print(text_row)
                         lines_printed_this_iteration += 1
                 else:
@@ -696,6 +699,9 @@ def play_game(
                     print("Already at starting position.")
             elif command.lower() == "r":
                 read_board_aloud(board)
+            elif command.lower() in ("o", "flip"):
+                flip_board_orientation()
+                continue
             elif command.lower() == "a":
                 if engine is None:
                     print("Engine not available. Configure engine path in settings first.")
@@ -740,7 +746,7 @@ def play_game(
                     sys.stdout.flush()
                 else:
                     print("Cannot analyze finished game position.")
-                    time.sleep(1)
+                    input("Press Enter to continue...")
             elif command.lower() == "t":
                 # Clear footer (variations/cmds) lines below board before showing Masters tree
                 sys.stdout.write(f"\033[{footer_clear_height}A")
@@ -752,7 +758,7 @@ def play_game(
                 masters_moves = fetch_masters_moves(board, settings_manager)
                 if not masters_moves:
                     print("No Masters data available.")
-                    time.sleep(1)
+                    input("Press Enter to continue...")
                 else:
                     for idx, (san, stats) in enumerate(masters_moves, 1):
                         try:
@@ -769,7 +775,7 @@ def play_game(
                             success, _ = navigator.make_move(sel_san)
                             if not success:
                                 print("Invalid move from Masters list.")
-                                time.sleep(1)
+                                input("Press Enter to continue...")
 
             # -------------------- NEW COMMANDS --------------------
             elif command.lower().startswith("p") and command.lower() not in ("pg", "pgn"):
@@ -812,7 +818,7 @@ def play_game(
             elif command.lower() == "prev":
                 if not navigator.go_back():
                     print("Already at starting position.")
-                time.sleep(0.5)
+                input("Press Enter to continue...")
 
             elif command.lower() == "next":
                 success, _ = navigator.make_move("")
@@ -835,13 +841,13 @@ def play_game(
                     success, message = navigator.delete_variation(var_num)
                     print(message)
                     if not success:
-                        time.sleep(1)
+                        input("Press Enter to continue...")
                     else:
-                        time.sleep(0.5)
+                        input("Press Enter to continue...")
                         navigator.has_changes = True
                 else:
                     print("Invalid delete variation command. Use 'd <number>'.")
-                    time.sleep(1)
+                    input("Press Enter to continue...")
             elif command.lower() == "save":
                 if not is_broadcast and navigator.has_changes:
                     game_manager.games[game_index] = navigator.working_game
@@ -1070,7 +1076,7 @@ def _run_training_session(
                 from blindbase.ui.board import render_board, get_console
 
                 console = get_console()
-                for row in render_board(board):
+                for row in render_board(board, flipped=BOARD_FLIPPED):
                     console.print(row)
             else:
                 # Fallback ASCII board for screen-readers
@@ -1099,6 +1105,10 @@ def _run_training_session(
                     continue
                 cmd_letter = raw_cmd[0].lower()
                 cmd_arg = raw_cmd[1:].lstrip()
+                if cmd_letter in ("o", "f"):
+                    flip_board_orientation()
+                    refresh = True  # trigger board re-render
+                    break
                 if cmd_letter == "m":
                     if game_manager is not None:
                         show_main_menu(game_manager, settings_manager, engine)
@@ -1106,7 +1116,8 @@ def _run_training_session(
                     break
                 if cmd_letter == "h":
                     show_training_help()
-                    continue
+                    refresh = True  # redraw board after help closes
+                    break
                 if cmd_letter == "r":
                     read_board_aloud(board)
                     continue
@@ -1135,8 +1146,8 @@ def _run_training_session(
                 try:
                     parsed_move = board.parse_san(move_inp)
                 except Exception:
-                    # Retry with first letter upper-cased for case-insensitive SAN (e.g., nf3 → Nf3)
-                    if move_inp and move_inp[0].islower() and move_inp[0] not in "abcdefgh":
+                    # Retry with first letter upper-cased for case-insensitive SAN (e.g., nf3 → Nf3, bg7 → Bg7)
+                    if move_inp and move_inp[0].islower() and move_inp[0] in "kqrbn":
                         san_fixed = move_inp[0].upper() + move_inp[1:]
                         try:
                             parsed_move = board.parse_san(san_fixed)
@@ -1157,7 +1168,7 @@ def _run_training_session(
                 else:
                     attempts += 1
                     if attempts < 3:
-                        print("Wrong move – try again (mainline only)…")
+                        print("Wrong move – try again")
                     else:
                         errors += 1
                         total_moves += 1
@@ -1202,6 +1213,11 @@ def _run_training_session(
                 cmd_arg = raw_cmd[1:].lstrip()
                 if cmd_letter in ("", "1"):
                     break
+                if cmd_letter in ("o", "f"):
+                    flip_board_orientation()
+                    refresh = True  # trigger board re-render
+                    menu_requested_comp = True
+                    break
                 if cmd_letter == "m":
                     if game_manager is not None:
                         show_main_menu(game_manager, settings_manager, engine)
@@ -1210,7 +1226,9 @@ def _run_training_session(
                     break
                 if cmd_letter == "h":
                     show_training_help()
-                    continue
+                    refresh = True  # refresh after help
+                    menu_requested_comp = True  # stay before computer move
+                    break
                 if cmd_letter == "r":
                     read_board_aloud(board)
                     continue
@@ -1260,12 +1278,14 @@ def show_training_help():
     print("--- Training Help ---")
     print("Enter your move in SAN or UCI format, or use commands:")
     print("  h  - show this help")
+    print("  o  - flip board orientation")
     print("  r  - read the board aloud")
     print("  m  - return to main menu")
     print("  p  - list locations of a piece (e.g., p N)")
     print("  s  - describe a file or rank (e.g., s a or s 1)")
     print("  q  - quit current training session")
     input("Press Enter to continue…")
+    clear_screen_and_prepare_for_new_content()  # remove help artifacts
 
 
 def start_openings_training(game_manager: GameManager, settings_manager: SettingsManager):
@@ -1285,6 +1305,9 @@ def start_openings_training(game_manager: GameManager, settings_manager: Setting
         while colour_choice not in {"w", "b"}:
             colour_choice = input("Train this opening as (w) White or (b) Black? ").strip().lower()
         player_color = chess.WHITE if colour_choice == "w" else chess.BLACK
+        # Set orientation before session starts
+        global BOARD_FLIPPED
+        BOARD_FLIPPED = (player_color == chess.BLACK)
         navigator = GameNavigator(game)
         _run_training_session(navigator, player_color, settings_manager, preset_choices=None, game_manager=game_manager, engine=None)
 
@@ -1306,11 +1329,18 @@ def show_help(context_name: str):
             "b – Back (return to previous)"
         ],
         "game_selection": [
-            "<num> – open game", "n – new game", "save – save & back",
-            "r – reload PGN", "b – live broadcasts", "m – main menu",
-            "b – back (quit)", "h – help"
+            "<number> – open selected game",
+            "n – create a new empty game",
+            "s – open settings menu",
+            "r – reload PGN file from disk",
+            "p / f – previous / next page (if multiple pages)",
+            "d <number> – delete game",
+            "m – return to main menu",
+            "q – quit to previous screen",
+            "h – this help screen"
         ],
         "game_view": [
+            "o / flip – toggle board orientation",
             "Enter/next – make next main-line move",
             "b/prev – go to previous move",
             "<move> (e4,Nf3 or e2e4) – make a move",
@@ -1370,7 +1400,7 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
                             break  # back to rounds list
                         # Play chosen game
                         play_game(
-                            game_manager,
+                            game_manager, # Note: passing local game_manager, may not be ideal
                             engine,
                             sel_game,
                             settings_manager,
@@ -1398,7 +1428,7 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
             break
         else:
             print("Invalid option.")
-            time.sleep(0.7)
+            input("Press Enter to continue...")
 
 
 # ---------------------------------------------------------------------------
@@ -1479,13 +1509,11 @@ def main():
             game.headers["Event"] = "New Game"
             f.write(str(game))
         print(f"Created new PGN file at: {actual_pgn_path}")
-        time.sleep(1)
+        input("Press Enter to continue...")
 
     game_manager = GameManager(actual_pgn_path)
     
     clear_screen_and_prepare_for_new_content(is_first_draw=True)
-    print("Welcome to Blind-Base CLI!")
-    time.sleep(0.5)
 
     # If no PGN file argument was provided, start with the Main Menu instead of the game list.
     if not pgn_file_provided:
