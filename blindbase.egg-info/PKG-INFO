@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: blindbase
-Version: 0.8.0
+Version: 0.8.1
 Summary: Accessible CLI chess study tool with Stockfish analysis and  Lichess integration.
 Author-email: Alexey Streltsov <iitshak@gmail.com>
 License: MIT
@@ -23,6 +23,12 @@ Requires-Dist: typer[all]>=0.9
 Requires-Dist: rich>=13
 Requires-Dist: python-chess>=1.999
 Requires-Dist: requests>=2.26
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-rich>=0.6; extra == "dev"
+Requires-Dist: snapshottest>=0.6; extra == "dev"
+Requires-Dist: mypy>=1.8; extra == "dev"
+Requires-Dist: ruff>=0.4; extra == "dev"
 
 # BlindBase – Accessible Chess-Study CLI
 

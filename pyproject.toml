@@ -31,6 +31,16 @@ urls = {"Homepage" = "https://github.com/itshak/blind-base-cli"}
 [project.scripts]       # creates `blindbase` command
 blindbase = "blindbase.app:app"
 
+[project.optional-dependencies]
+# Developer and CI tooling, not required at runtime
+dev = [
+    "pytest>=7.0",
+    "pytest-rich>=0.6",
+    "snapshottest>=0.6",
+    "mypy>=1.8",
+    "ruff>=0.4",
+]
+
 [build-system]
 requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"

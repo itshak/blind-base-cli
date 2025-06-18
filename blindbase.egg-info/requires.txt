@@ -2,3 +2,10 @@ typer[all]>=0.9
 rich>=13
 python-chess>=1.999
 requests>=2.26
+
+[dev]
+pytest>=7.0
+pytest-rich>=0.6
+snapshottest>=0.6
+mypy>=1.8
+ruff>=0.4
