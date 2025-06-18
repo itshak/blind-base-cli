@@ -1,10 +1,10 @@
 [project]
 name = "blindbase"
-version = "0.6.3.5"
+version = "0.7.0"
 description = "Accessible CLI chess study tool with Stockfish analysis and  Lichess integration."
 authors = [{name="Alexey Streltsov", email="iitshak@gmail.com"}]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "typer[all]>=0.9",
     "rich>=13",
