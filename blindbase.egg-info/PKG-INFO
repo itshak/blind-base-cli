@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: blindbase
-Version: 0.6
+Version: 0.8.0
 Summary: Accessible CLI chess study tool with Stockfish analysis and  Lichess integration.
 Author-email: Alexey Streltsov <iitshak@gmail.com>
 License: MIT
@@ -17,7 +17,7 @@ Classifier: Operating System :: MacOS
 Classifier: Operating System :: Microsoft :: Windows
 Classifier: Intended Audience :: End Users/Desktop
 Classifier: Environment :: Console
-Requires-Python: >=3.9
+Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 Requires-Dist: typer[all]>=0.9
 Requires-Dist: rich>=13

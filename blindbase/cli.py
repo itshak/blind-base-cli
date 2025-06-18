@@ -51,13 +51,6 @@ move_to_str = _basic_move_to_str
 
 from blindbase.settings import SettingsManager
 
-# Global board orientation flag: False => White side, True => Black side
-BOARD_FLIPPED = False
-
-def flip_board_orientation():
-    """Toggle global board orientation flag."""
-    global BOARD_FLIPPED
-    BOARD_FLIPPED = not BOARD_FLIPPED
 from blindbase.storage import GameManager
 from blindbase.broadcast import BroadcastManager, stream_game_pgn
 from blindbase.navigator import GameNavigator
@@ -582,6 +575,7 @@ def play_game(
 ):
     # Track how many lines were printed in previous iteration so we can clear them
     display_height = 0  # dynamic, ensures compact output
+    board_flipped = False
     if is_broadcast:
         navigator = GameNavigator(navigator_or_index)
         game_index = None
@@ -631,8 +625,7 @@ def play_game(
                 if not screen_reader_mode():
                     from blindbase.ui.board import render_board, get_console
                     console = get_console()
-                    from blindbase.cli import BOARD_FLIPPED  # self-import safe due to runtime import
-                    for text_row in render_board(board, flipped=BOARD_FLIPPED):
+                    for text_row in render_board(board, flipped=board_flipped):
                         console.print(text_row)
                         lines_printed_this_iteration += 1
                 else:
@@ -721,7 +714,7 @@ def play_game(
             elif command.lower() == "r":
                 read_board_aloud(board)
             elif command.lower() in ("o", "flip"):
-                flip_board_orientation()
+                board_flipped = not board_flipped
                 continue
             elif command.lower() == "a":
                 if engine is None:
@@ -1072,6 +1065,7 @@ def _run_training_session(
     style_pref = settings_manager.get("move_notation")
 
     pending_comp_node = None  # stores computer's chosen reply until it is executed
+    board_flipped = player_color == chess.BLACK
     refresh = True
     while navigator.current_node.variations:
         # Refresh style preference in case settings changed in menu
@@ -1097,7 +1091,7 @@ def _run_training_session(
                 from blindbase.ui.board import render_board, get_console
 
                 console = get_console()
-                for row in render_board(board, flipped=BOARD_FLIPPED):
+                for row in render_board(board, flipped=board_flipped):
                     console.print(row)
             else:
                 # Fallback ASCII board for screen-readers
@@ -1127,7 +1121,7 @@ def _run_training_session(
                 cmd_letter = raw_cmd[0].lower()
                 cmd_arg = raw_cmd[1:].lstrip()
                 if cmd_letter in ("o", "f"):
-                    flip_board_orientation()
+                    board_flipped = not board_flipped
                     refresh = True  # trigger board re-render
                     break
                 if cmd_letter == "m":
@@ -1235,7 +1229,7 @@ def _run_training_session(
                 if cmd_letter in ("", "1"):
                     break
                 if cmd_letter in ("o", "f"):
-                    flip_board_orientation()
+                    board_flipped = not board_flipped
                     refresh = True  # trigger board re-render
                     menu_requested_comp = True
                     break
@@ -1326,9 +1320,6 @@ def start_openings_training(game_manager: GameManager, settings_manager: Setting
         while colour_choice not in {"w", "b"}:
             colour_choice = input("Train this opening as (w) White or (b) Black? ").strip().lower()
         player_color = chess.WHITE if colour_choice == "w" else chess.BLACK
-        # Set orientation before session starts
-        global BOARD_FLIPPED
-        BOARD_FLIPPED = (player_color == chess.BLACK)
         navigator = GameNavigator(game)
         _run_training_session(navigator, player_color, settings_manager, preset_choices=None, game_manager=game_manager, engine=None)
 
