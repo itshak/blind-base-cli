@@ -689,7 +689,7 @@ def play_game(
                 if not is_broadcast and navigator.has_changes:
                     confirm_quit = input("Unsaved changes. Quit anyway? (y/N): ").strip().lower()
                     if confirm_quit != "y":
-                        continue
+                        break
                 break
             elif command.lower() == "b":
                 if not navigator.go_back():
@@ -1028,6 +1028,8 @@ def _run_training_session(
     player_color: chess.Color,
     settings_manager: SettingsManager,
     preset_choices: list[int] | None = None,
+    game_manager: GameManager | None = None,
+    engine=None,
 ):
     """Interactive loop that quizzes the *player_color* side of *navigator*.
 
@@ -1042,9 +1044,17 @@ def _run_training_session(
     errors = 0
     style_pref = settings_manager.get("move_notation")
 
+    pending_comp_node = None  # stores computer's chosen reply until it is executed
+    refresh = True
     while navigator.current_node.variations:
-        board = navigator.get_current_board()
-        clear_screen_and_prepare_for_new_content()
+        # Refresh style preference in case settings changed in menu
+        style_pref = settings_manager.get("move_notation")
+        menu_requested = False
+        menu_requested_comp = False
+        if refresh:
+            board = navigator.get_current_board()
+            clear_screen_and_prepare_for_new_content()
+        refresh = False
 
         # --- Header & board --------------------------------------------------
         title = (
@@ -1082,13 +1092,18 @@ def _run_training_session(
             expected_nodes = navigator.current_node.variations
             mainline_move = expected_nodes[0].move if expected_nodes else None
             attempts = 0
+            menu_requested = False
             while True:
                 raw_cmd = input("command (h for help): ").strip()
-                if not raw_cmd:
-                    cmd_letter, cmd_arg = "", ""
-                else:
-                    cmd_letter = raw_cmd[0].lower()
-                    cmd_arg = raw_cmd[1:].lstrip()
+                if raw_cmd == "":
+                    continue
+                cmd_letter = raw_cmd[0].lower()
+                cmd_arg = raw_cmd[1:].lstrip()
+                if cmd_letter == "m":
+                    if game_manager is not None:
+                        show_main_menu(game_manager, settings_manager, engine)
+                    refresh = True  # trigger board re-render
+                    break
                 if cmd_letter == "h":
                     show_training_help()
                     continue
@@ -1120,13 +1135,24 @@ def _run_training_session(
                 try:
                     parsed_move = board.parse_san(move_inp)
                 except Exception:
-                    try:
-                        parsed_move = board.parse_uci(move_inp)
-                    except Exception:
-                        pass
+                    # Retry with first letter upper-cased for case-insensitive SAN (e.g., nf3 → Nf3)
+                    if move_inp and move_inp[0].islower() and move_inp[0] not in "abcdefgh":
+                        san_fixed = move_inp[0].upper() + move_inp[1:]
+                        try:
+                            parsed_move = board.parse_san(san_fixed)
+                        except Exception:
+                            parsed_move = None
+                    else:
+                        parsed_move = None
+                    if parsed_move is None:
+                        try:
+                            parsed_move = board.parse_uci(move_inp.lower())
+                        except Exception:
+                            pass
                 if parsed_move == mainline_move:
                     navigator.current_node = expected_nodes[0]
                     total_moves += 1
+                    refresh = True  # will redraw board with updated position
                     break  # correct – advance
                 else:
                     attempts += 1
@@ -1142,51 +1168,78 @@ def _run_training_session(
                         )
                         input("Press Enter to continue…")
                         navigator.current_node = expected_nodes[0]  # follow mainline
+                        refresh = True
                         break
+
+                
+                    continue
 
         # ---------------- Computer turn -------------------------------------
         else:
             expected_nodes = navigator.current_node.variations
             if not expected_nodes:
                 break
-            if rand_ptr < len(preset_choices):
-                idx = preset_choices[rand_ptr]
-            else:
-                idx = random.randrange(len(expected_nodes))
-                preset_choices.append(idx)
-            rand_ptr += 1
-            comp_node = expected_nodes[idx]
+
+            # Reuse previously selected computer move if returning from menu
+            if pending_comp_node is None:
+                if rand_ptr < len(preset_choices):
+                    idx = preset_choices[rand_ptr]
+                else:
+                    idx = random.randrange(len(expected_nodes))
+                    preset_choices.append(idx)
+                rand_ptr += 1
+                pending_comp_node = expected_nodes[idx]
+            comp_node = pending_comp_node
+            menu_requested_comp = False
             comp_move_str = move_to_str(board, comp_node.move, style_pref)
             print(f"Computer will play: {comp_move_str}")
             # Allow accessibility commands before continuing
             while True:
                 raw_cmd = input("command (h for help / Enter to continue): ").strip()
-                if not raw_cmd:
-                    cmd_letter, cmd_arg = "", ""
-                else:
-                    cmd_letter = raw_cmd[0].lower()
-                    cmd_arg = raw_cmd[1:].lstrip()
-                if raw_cmd in ("", "1"):
+                if raw_cmd == "":
+                    break  # continue with computer move
+                cmd_letter = raw_cmd[0].lower()
+                cmd_arg = raw_cmd[1:].lstrip()
+                if cmd_letter in ("", "1"):
                     break
-                if raw_cmd == "h":
+                if cmd_letter == "m":
+                    if game_manager is not None:
+                        show_main_menu(game_manager, settings_manager, engine)
+                    refresh = True  # trigger board re-render
+                    menu_requested_comp = True
+                    break
+                if cmd_letter == "h":
                     show_training_help()
-                elif cmd_letter == "r":
+                    continue
+                if cmd_letter == "r":
                     read_board_aloud(board)
-                elif cmd_letter == "p":
+                    continue
+                if cmd_letter == "p":
                     spec = cmd_arg if cmd_arg else input("Enter piece code: ").strip()
                     if spec:
                         print(describe_piece_locations(board, spec))
                         input("Press Enter…")
-                elif cmd_letter == "s":
+                    else:
+                        print("Invalid piece code.")
+                    continue
+                if cmd_letter == "s":
                     spec = cmd_arg if cmd_arg else input("Enter file/rank: ").strip()
                     if spec:
                         print(describe_file_or_rank(board, spec))
                         input("Press Enter…")
-                elif raw_cmd == "q":
+                    else:
+                        print("Invalid file/rank spec.")
+                    continue
+                if raw_cmd == "q":
                     return
                 else:
                     print("Unknown command. h for help.")
+            # If menu was requested, restart outer loop without making the computer move
+            if menu_requested_comp:
+                continue
             navigator.current_node = comp_node
+            pending_comp_node = None  # reset after move executed
+            refresh = True  # redraw board after computer move
 
     # ---------------- Session finished --------------------------------------
     clear_screen_and_prepare_for_new_content()
@@ -1198,7 +1251,7 @@ def _run_training_session(
 
     if input("Replay same variation? (y/N): ").strip().lower() == "y":
         new_nav = GameNavigator(navigator.original_game)
-        _run_training_session(new_nav, player_color, settings_manager, preset_choices)
+        _run_training_session(new_nav, player_color, settings_manager, preset_choices, game_manager=game_manager, engine=None)
 
 
 def show_training_help():
@@ -1208,6 +1261,7 @@ def show_training_help():
     print("Enter your move in SAN or UCI format, or use commands:")
     print("  h  - show this help")
     print("  r  - read the board aloud")
+    print("  m  - return to main menu")
     print("  p  - list locations of a piece (e.g., p N)")
     print("  s  - describe a file or rank (e.g., s a or s 1)")
     print("  q  - quit current training session")
@@ -1232,7 +1286,7 @@ def start_openings_training(game_manager: GameManager, settings_manager: Setting
             colour_choice = input("Train this opening as (w) White or (b) Black? ").strip().lower()
         player_color = chess.WHITE if colour_choice == "w" else chess.BLACK
         navigator = GameNavigator(game)
-        _run_training_session(navigator, player_color, settings_manager)
+        _run_training_session(navigator, player_color, settings_manager, preset_choices=None, game_manager=game_manager, engine=None)
 
         if input("Train another game? (y/N): ").strip().lower() != "y":
             break
