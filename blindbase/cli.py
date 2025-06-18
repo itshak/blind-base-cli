@@ -311,6 +311,13 @@ def show_games_menu(broadcast_manager):
         elif choice.lower() == 'm':
             show_main_menu(None, SettingsManager(), None)
             continue
+        elif choice.lower() == "r":
+            # Refresh data
+            try:
+                rounds = broadcast_manager.fetch_rounds(broadcast_manager.selected_broadcast)
+            except Exception:
+                pass
+            continue
         elif choice.lower() == 'h':
             show_help('broadcast_menus')
             continue
@@ -351,6 +358,13 @@ def show_rounds_menu(broadcast_manager):
         elif choice.lower() == 'm':
             show_main_menu(None, SettingsManager(), None)
             continue
+        elif choice.lower() == "r":
+            # Refresh data
+            try:
+                rounds = broadcast_manager.fetch_rounds(broadcast_manager.selected_broadcast)
+            except Exception:
+                pass
+            continue
         elif choice.lower() == 'h':
             show_help('broadcast_menus')
             continue
@@ -382,6 +396,13 @@ def show_broadcasts_menu(broadcast_manager):
                 return "SELECTED"
         elif choice.lower() == 'm':
             show_main_menu(None, SettingsManager(), None)
+            continue
+        elif choice.lower() == "r":
+            # Refresh data
+            try:
+                rounds = broadcast_manager.fetch_rounds(broadcast_manager.selected_broadcast)
+            except Exception:
+                pass
             continue
         elif choice.lower() == 'h':
             show_help('broadcast_menus')
