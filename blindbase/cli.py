@@ -299,8 +299,8 @@ def show_games_menu(broadcast_manager):
                 black = game.headers.get("Black", "Unknown")
                 result = game.headers.get("Result", "*")
                 print(f"{i+1}. {white} vs {black} [{result}]")
-        print("\nCommands: <number> (select game), 'b' (back)")
-        choice = input("Select option: ").strip()
+        
+        choice = input("command (h for help): ").strip()
         if choice.lower() == "b":
             return "BACK"
         elif choice.isdigit():
@@ -339,8 +339,8 @@ def show_rounds_menu(broadcast_manager):
                 else:
                     start_date = 'Unknown'
                 print(f"{i+1}. {name} (Start: {start_date})")
-        print("\nCommands: <number> (select round), 'b' (back)")
-        choice = input("Select option: ").strip()
+        
+        choice = input("command (h for help): ").strip()
         if choice.lower() == "b":
             return "BACK"
         elif choice.isdigit():
@@ -369,8 +369,8 @@ def show_broadcasts_menu(broadcast_manager):
                 name = broadcast.get("name", "Unknown")
                 start_date = broadcast.get("startDate", "Unknown")
                 print(f"{i+1}. {name} (Start: {start_date})")
-        print("\nCommands: <number> (select broadcast), 'r' (refresh), 'b' (back)")
-        choice = input("Select option: ").strip()
+        
+        choice = input("command (h for help): ").strip()
         if choice.lower() == "b":
             return None
         elif choice.lower() == "r":
@@ -1292,7 +1292,7 @@ def start_openings_training(game_manager: GameManager, settings_manager: Setting
     """Entry-point invoked from the main menu for the Openings Training mode."""
     if not game_manager.games:
         print("No games loaded. Load or import a PGN first.")
-        time.sleep(1.5)
+        input("Press Enter to continue...")
         return
 
     while True:
@@ -1377,7 +1377,7 @@ def show_main_menu(game_manager: GameManager | None, settings_manager: SettingsM
             print("4. Openings Training")
         print("q. Quit program")
         print("h. Help  |  b. Back")
-        choice = input("Select option: ").strip().lower()
+        choice = input("command (h for help): ").strip().lower()
         if choice == "1" and game_manager is not None:
             sel_idx = show_game_selection_menu(game_manager, settings_manager, engine)
             if isinstance(sel_idx, int):
