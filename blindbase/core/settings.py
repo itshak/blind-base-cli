@@ -1,0 +1,140 @@
+"""Application settings management using Pydantic + TOML.
+
+The settings are stored in ``~/.config/blindbase.toml`` and can be overridden
+by environment variables prefixed with ``BB_``.
+
+Backward-compatibility: if an older ``~/.blindbase.json`` file is found it is
+imported once then renamed to ``.blindbase.json.bak`` to avoid overriding the
+TOML file on subsequent runs.
+"""
+from __future__ import annotations
+
+import json
+import os
+import shutil
+from pathlib import Path
+from typing import Any, Dict
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from tomlkit import dumps, parse, TOMLDocument
+
+CONFIG_PATH = Path.home() / ".config" / "blindbase.toml"
+OLD_JSON_PATH = Path.home() / ".blindbase.json"
+
+
+class EngineSettings(BaseSettings):
+    lines: int = Field(3, description="Number of PV lines to show")
+    path: str | None = Field(None, description="Override path to Stockfish executable")
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+
+class OpeningTreeSettings(BaseSettings):
+    lichess_moves: int = Field(5, description="How many moves to request/display per branch from Lichess API")
+    cache_hours: int = Field(24, description="How long to cache opening tree results")
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+
+from typing import Literal
+
+class UISettings(BaseSettings):
+    theme: str = Field("light", description="colour theme (light|dark)")
+    show_board: bool = Field(True, description="Display ASCII board; if False only text")
+    games_per_page: int = Field(10, description="Pagination size for games list")
+    move_notation: Literal["san", "uci", "nato", "anna"] = Field("san", description="Move notation style")
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+
+class PGNSettings(BaseSettings):
+    directory: Path = Field(Path("."), description="Default PGN files directory")
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+
+class Settings(BaseSettings):
+    """Top-level settings object."""
+
+    engine: EngineSettings = Field(default_factory=EngineSettings)
+    opening_tree: OpeningTreeSettings = Field(default_factory=OpeningTreeSettings)
+    ui: UISettings = Field(default_factory=UISettings)
+    pgn: PGNSettings = Field(default_factory=PGNSettings)
+
+    model_config = SettingsConfigDict(env_prefix="BB_", extra="ignore")
+
+    # ---------------------------------------------------------------------
+    # Persistence helpers
+    # ---------------------------------------------------------------------
+
+    @classmethod
+    def _load_toml(cls) -> Dict[str, Any]:
+        if CONFIG_PATH.exists():
+            return parse(CONFIG_PATH.read_text())  # type: ignore[arg-type]
+        return {}
+
+    @classmethod
+    def _migrate_json(cls) -> Dict[str, Any]:
+        """If legacy JSON exists, convert it and rename the old file."""
+        if not OLD_JSON_PATH.exists():
+            return {}
+        data = json.loads(OLD_JSON_PATH.read_text())
+        # Map old flat keys to new nested ones (best-effort)
+        mapped: Dict[str, Any] = {}
+        if "engine_lines" in data:
+            mapped.setdefault("engine", {})["lines"] = int(data["engine_lines"])
+        if "lichess_moves" in data:
+            mapped.setdefault("opening_tree", {})["lichess_moves"] = int(data["lichess_moves"])
+        if "show_board" in data:
+            mapped.setdefault("ui", {})["show_board"] = bool(data["show_board"])
+        if "games_per_page" in data:
+            mapped.setdefault("ui", {})["games_per_page"] = int(data["games_per_page"])
+        if "move_notation" in data:
+            mapped.setdefault("ui", {})["move_notation"] = str(data["move_notation"])
+        if "pgn_dir" in data:
+            mapped.setdefault("pgn", {})["directory"] = str(data["pgn_dir"])
+        if "cache_hours" in data:
+            mapped.setdefault("opening", {})["cache_hours"] = int(data["cache_hours"])
+        if "ui_theme" in data:
+            mapped.setdefault("ui", {})["theme"] = str(data["ui_theme"])
+        # backup old file
+        OLD_JSON_PATH.rename(OLD_JSON_PATH.with_suffix(".bak"))
+        return mapped
+
+    @classmethod
+    def load(cls) -> "Settings":
+        raw = cls._load_toml()
+        if not raw:
+            # first run, try json migration
+            raw = cls._migrate_json()
+        return cls(**raw)
+
+    # ------------------------------------------------------------------
+    # save
+    # ------------------------------------------------------------------
+    def save(self) -> None:
+        # round-trip preserve comments if toml exists
+        if CONFIG_PATH.exists():
+            doc: TOMLDocument = parse(CONFIG_PATH.read_text())  # type: ignore[arg-type]
+        else:
+            doc = TOMLDocument()
+
+        # update values
+        def _assign(section: str, values: Dict[str, Any]):
+            # reset section to remove stale keys
+            doc[section] = TOMLDocument()
+            for k, v in values.items():
+                doc[section][k] = v
+
+        _assign("engine", self.engine.model_dump())
+        _assign("opening_tree", self.opening_tree.model_dump())
+        _assign("ui", self.ui.model_dump())
+        _assign("pgn", self.pgn.model_dump())
+
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        CONFIG_PATH.write_text(dumps(doc))
+
+
+# singleton instance
+settings = Settings.load()
