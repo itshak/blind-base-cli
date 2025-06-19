@@ -79,6 +79,15 @@ class GameListPanel:
             if cmd in {"p", "b", "prev", "previous"} and page > 0:
                 page -= 1
                 continue
+            if cmd in {"o"}:
+                from blindbase.ui.panels.settings_menu import run_settings_menu
+                from blindbase.core.settings import settings
+                run_settings_menu()
+                # Refresh pagination with possibly new page size
+                self.page_size = settings.ui.games_per_page
+                page = 0
+                total_pages = (total_games + self.page_size - 1) // self.page_size
+                continue
             if cmd.isdigit():
                 idx = int(cmd) - 1
                 if 0 <= idx < total_games:
@@ -134,16 +143,18 @@ class GameListPanel:
             self.delete_index = idx
 
     def _show_help(self) -> None:
-        help_text = Text()
-        help_text.append("Commands:\n", style="bold")
-        help_text.append("  <num>    open game\n")
-        help_text.append("  f        next page\n")
-        help_text.append("  p        previous page\n")
-        help_text.append("  n        add new game\n")
-        help_text.append("  d <num>  delete game\n")
-        help_text.append("  q        quit list\n")
-        help_text.append("  h        this help\n")
-        self._console.print(Panel(help_text, title="Games List – Help", border_style="green"))
+        from blindbase.ui.utils import show_help_panel
+        cmds = [
+            ("<num>", "open game"),
+            ("f", "next page"),
+            ("p", "previous page"),
+            ("n", "add new game"),
+            ("d <num>", "delete game"),
+            ("o", "options / settings"),
+            ("q", "quit list"),
+            ("h", "this help"),
+        ]
+        show_help_panel(self._console, "Games List – Help", cmds)
         self._console.input("Press Enter to continue…")
 
     # ------------------------------------------------------------------

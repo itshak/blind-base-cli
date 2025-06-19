@@ -18,6 +18,7 @@ from blindbase.core.settings import settings
 from blindbase.ui.utils import clear_screen_and_prepare_for_new_content
 from rich.console import Console
 from rich.table import Table
+from blindbase.ui.utils import show_help_panel
 from rich.panel import Panel
 from rich.text import Text
 
@@ -117,12 +118,11 @@ def run_settings_menu() -> None:
                     settings.save()
                 break
             if choice == "h":
-                console.print(Panel("""
-Commands:
-  <number>   open that category
-  q          quit (prompt to save)
-  h          help
-""", title="Help", border_style="cyan"))
+                show_help_panel(console, "Settings – Help", [
+                    ("<number>", "open that category"),
+                    ("q", "quit (prompt to save)"),
+                    ("h", "help"),
+                ])
                 input("Press Enter…")
                 continue
             if choice.isdigit():
@@ -154,14 +154,13 @@ Commands:
                     settings.save()
             break
         if choice == "h":
-            console.print(Panel("""
-Commands:
-  <number>   edit that setting
-  s          save changes & stay
-  b          back to categories
-  q          quit (prompt to save if changes)
-  h          show this help
-""", title="Help", border_style="cyan"))
+            show_help_panel(console, "Settings – Help", [
+                ("<number>", "edit that setting"),
+                ("s", "save changes & stay"),
+                ("b", "back to categories"),
+                ("q", "quit (prompt to save if changes)"),
+                ("h", "show this help"),
+            ])
             input("Press Enter to continue…")
             continue
         if choice == "s":

@@ -158,6 +158,48 @@ class GameView:
     def _render(self) -> None:
         console = self._console
         console.clear()
+        # ------------------------------------------------------------------
+        # Header info -------------------------------------------------------
+        # ------------------------------------------------------------------
+        hdr = self.nav.working_game.headers
+        header_lines: list[RenderableType] = []
+        # Event line
+        evt_parts: list[str] = []
+        for k in ("Event", "Site", "Round"):
+            v = hdr.get(k)
+            if v and v != "?":
+                evt_parts.append(v)
+        if evt_parts:
+            header_lines.append(Text(" – ".join(evt_parts), style="bold magenta"))
+        # Players + result line
+        def _player(prefix: str, name_key: str) -> Text:
+            name = hdr.get(name_key, "?")
+            title = hdr.get(prefix + "Title") or ""
+            elo = hdr.get(prefix + "Elo") or ""
+            t = Text(name, style="bold yellow")
+            if title and title != "?":
+                t.append(f" [{title}]", style="green")
+            if elo and elo != "?":
+                t.append(f" ({elo})", style="cyan")
+            return t
+        white_t = _player("White", "White")
+        black_t = _player("Black", "Black")
+        res = hdr.get("Result", "*")
+        players_line = Text.assemble(white_t, Text(" vs "), black_t, Text(f"   {res}", style="bold"))
+        header_lines.append(players_line)
+        # Date / ECO line
+        date = hdr.get("Date")
+        eco = hdr.get("ECO")
+        extra_parts = []
+        if date and date not in {"?", "????.??.??"}:
+            extra_parts.append(date)
+        if eco and eco != "?":
+            extra_parts.append(f"ECO {eco}")
+        if extra_parts:
+            header_lines.append(Text(" | ".join(extra_parts), style="dim"))
+        for line in header_lines:
+            console.print(line)
+        console.print()  # blank line
         board = self.nav.get_current_board()
         # board lines
         for row in render_board(board, flipped=self._flip):
@@ -191,9 +233,25 @@ class GameView:
         return Text("Last move:", style="bold") + Text(f" {prefix} {san}", style="yellow")
 
     def _show_help(self) -> None:
-        print("""\nCommands:\n  Enter           next mainline move\n  b               back one move\n  f               flip board\n  <num>           choose variation number\n  p <piece>       list piece squares\n  s <file|rank>   describe a file or rank\n  r               read board (text)\n  d <num>         delete variation\n  t               opening tree\n  a               analysis panel
-  o               options / settings\n  c               engine eval\n  q               quit\n""")
-        input("Press Enter to continue…")
+        from blindbase.ui.utils import show_help_panel
+        console = self._console
+        cmds = [
+            ("Enter", "next mainline move"),
+            ("b", "back one move"),
+            ("f", "flip board"),
+            ("<num>", "choose variation number"),
+            ("p <piece>", "list piece squares"),
+            ("s <file|rank>", "describe a file or rank"),
+            ("r", "read board (text)"),
+            ("d <num>", "delete variation"),
+            ("t", "opening tree"),
+            ("a", "analysis panel"),
+            ("o", "options / settings"),
+            ("c", "engine eval"),
+            ("q", "quit"),
+        ]
+        show_help_panel(console, "PGN Viewer Commands", cmds)
+        console.input("Press Enter to continue…")
 
     def _read_board_aloud(self):
         text = board_summary(self.nav.get_current_board())
