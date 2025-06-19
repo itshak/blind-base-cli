@@ -26,25 +26,63 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     • f     – flip board
     • q     – quit
     """
+    # ------------------------------------------------------------------
+    # Load PGN file ------------------------------------------------------
+    # ------------------------------------------------------------------
     gm = core_pgn.load_games(file)
     if not gm.games:
         typer.echo("File contains no games", err=True)
         raise typer.Exit(code=1)
 
-    game = gm.games[0]
-    navigator = GameNavigator(game)
-    GameView(navigator).run()
+    # ------------------------------------------------------------------
+    # Let user pick a game via Rich menu -------------------------------
+    # ------------------------------------------------------------------
+    from blindbase.ui.panels.game_list import GameListPanel  # local import to avoid cycles
 
-    # After interactive view, prompt to save if edits were made
-    if navigator.has_changes:
-        choice = input("Save changes? (Y)es/(N)o: ").strip().lower()
-        if choice in {"", "y", "yes"}:
-            # replace the original game with edited one
-            gm.games[0] = navigator.working_game
+    while True:
+        panel = GameListPanel(gm.games, title=f"Games in {file.name}")
+        panel.run()
+        # Handle deletion
+        if panel.delete_index is not None:
+            idx = panel.delete_index
+            del gm.games[idx]
             core_pgn.save_games(gm)
-            print("Changes saved.")
+            typer.echo(f"Deleted game {idx+1}.")
+            continue  # back to list
+        # Handle new game
+        if panel.new_game_headers is not None:
+            import chess.pgn
+            new_game = chess.pgn.Game()
+            for k, v in panel.new_game_headers.items():
+                new_game.headers[k] = v
+            gm.games.append(new_game)
+            sel_idx = len(gm.games) - 1
         else:
-            print("Changes discarded.")
+            if panel.selected_index is None:
+                # user cancelled list -> exit command
+                raise typer.Exit(code=0)
+            sel_idx = panel.selected_index
+        assert sel_idx is not None  # mypy hint
+        game = gm.games[sel_idx]
+
+        # ------------------------------------------------------------------
+        # Launch interactive GameView --------------------------------------
+        # ------------------------------------------------------------------
+        navigator = GameNavigator(game)
+        GameView(navigator).run()  # returns when user quits game view
+
+        # ------------------------------------------------------------------
+        # Save changes back to PGN if needed --------------------------------
+        # ------------------------------------------------------------------
+        if navigator.has_changes:
+            choice = input("Save changes? (Y)es/(N)o: ").strip().lower()
+            if choice in {"", "y", "yes"}:
+                gm.games[sel_idx] = navigator.working_game
+                core_pgn.save_games(gm)
+                print("Changes saved.")
+            else:
+                print("Changes discarded.")
+        # After playing a game, loop back to list for another selection
 
 
 @app.command(name="list")
