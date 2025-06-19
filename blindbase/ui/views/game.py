@@ -88,6 +88,10 @@ class GameView:
                 # apply to navigator
                 self.nav.make_move(self.nav.get_current_board().san(mv))
             return False
+        if cmd.lower() == "o":
+            from blindbase.ui.panels.settings_menu import run_settings_menu
+            run_settings_menu()
+            return False
         if cmd.lower() == "a":
             from blindbase.core.settings import settings
             from blindbase.ui.panels.analysis import AnalysisPanel
@@ -187,7 +191,8 @@ class GameView:
         return Text("Last move:", style="bold") + Text(f" {prefix} {san}", style="yellow")
 
     def _show_help(self) -> None:
-        print("""\nCommands:\n  Enter           next mainline move\n  b               back one move\n  f               flip board\n  <num>           choose variation number\n  p <piece>       list piece squares\n  s <file|rank>   describe a file or rank\n  r               read board (text)\n  d <num>         delete variation\n  t               opening tree\n  a               analysis panel\n  c               engine eval\n  q               quit\n""")
+        print("""\nCommands:\n  Enter           next mainline move\n  b               back one move\n  f               flip board\n  <num>           choose variation number\n  p <piece>       list piece squares\n  s <file|rank>   describe a file or rank\n  r               read board (text)\n  d <num>         delete variation\n  t               opening tree\n  a               analysis panel
+  o               options / settings\n  c               engine eval\n  q               quit\n""")
         input("Press Enter to continue…")
 
     def _read_board_aloud(self):
