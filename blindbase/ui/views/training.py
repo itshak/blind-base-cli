@@ -13,7 +13,7 @@ from rich.console import Console, RenderableType
 from rich.text import Text
 
 from blindbase.ui.utils import show_help_panel
-from blindbase.ui.renderers import render_board  # existing helper in codebase
+from blindbase.ui.board import render_board
 from blindbase.core.navigator import GameNavigator
 
 __all__ = ["TrainingView"]

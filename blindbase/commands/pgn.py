@@ -88,20 +88,24 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
 
 @app.command()
 def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
-     """Opening training mode using PGN main lines."""
-     gm = core_pgn.load_games(file)
-     if not gm.games:
-         typer.echo("File contains no games", err=True)
-         raise typer.Exit(code=1)
-     from blindbase.ui.panels.game_list import GameListPanel
-     # choose game
-     panel = GameListPanel(gm.games, title=f"Select game to train from {file.name}")
-     panel.run()
-     if panel.selected_index is None:
-         raise typer.Exit()
-     game = gm.games[panel.selected_index]
-     # choose color
-     from rich.prompt import Prompt
+    """Opening training mode using PGN main lines."""
+    gm = core_pgn.load_games(file)
+    if not gm.games:
+        typer.echo("File contains no games", err=True)
+        raise typer.Exit(code=1)
+    from blindbase.ui.panels.game_list import GameListPanel
+    # choose game
+    panel = GameListPanel(gm.games, title=f"Select game to train from {file.name}")
+    panel.run()
+    if panel.selected_index is None:
+        raise typer.Exit()
+    game = gm.games[panel.selected_index]
+    # choose color
+    from rich.prompt import Prompt
+    color = Prompt.ask("Train as (w)hite or (b)lack?", choices=["w", "b"], default="w")
+    player_is_white = color == "w"
+    nav = GameNavigator(game)
+    TrainingView(nav, player_is_white).run()
 
 
 @app.command(name="list")
