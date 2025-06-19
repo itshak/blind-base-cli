@@ -35,6 +35,17 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     navigator = GameNavigator(game)
     GameView(navigator).run()
 
+    # After interactive view, prompt to save if edits were made
+    if navigator.has_changes:
+        choice = input("Save changes? (Y)es/(N)o: ").strip().lower()
+        if choice in {"", "y", "yes"}:
+            # replace the original game with edited one
+            gm.games[0] = navigator.working_game
+            core_pgn.save_games(gm)
+            print("Changes saved.")
+        else:
+            print("Changes discarded.")
+
 
 @app.command(name="list")
 def list_games(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:

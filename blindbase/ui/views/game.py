@@ -89,8 +89,9 @@ class GameView:
                 self.nav.make_move(self.nav.get_current_board().san(mv))
             return False
         if cmd.lower() == "a":
+            from blindbase.core.settings import settings
             from blindbase.ui.panels.analysis import AnalysisPanel
-            panel = AnalysisPanel(self.nav.get_current_board())
+            panel = AnalysisPanel(self.nav.get_current_board(), lines=settings.engine.lines)
             panel.run()
             mv = getattr(panel, "selected_move", None)
             if mv is not None:

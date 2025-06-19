@@ -13,7 +13,8 @@ class GameManager:
     """CRUD operations for PGN files, including pagination helpers."""
 
     def __init__(self, pgn_filename: str):
-        self.pgn_filename = pgn_filename
+        from pathlib import Path
+        self.pgn_filename = str(pgn_filename)
         self.games: List[chess.pgn.Game] = []
         self.current_game_index: int = 0
         self.load_games()
@@ -65,7 +66,7 @@ class GameManager:
 
     def save_games(self) -> bool:
         try:
-            backup_filename = self.pgn_filename + ".backup"
+            backup_filename = f"{self.pgn_filename}.backup"
             if os.path.exists(self.pgn_filename):
                 shutil.copy2(self.pgn_filename, backup_filename)
             with open(self.pgn_filename, "w", encoding="utf-8") as pgn_file:

@@ -26,7 +26,7 @@ __all__ = [
 def load_games(pgn_path: str | Path) -> GameManager:
     """Return a `GameManager` for the given PGN file (creating it if missing).
     """
-    gm = GameManager(Path(pgn_path))
+    gm = GameManager(str(pgn_path))
     return gm
 
 
@@ -36,7 +36,14 @@ def save_games(game_manager: GameManager, destination: str | Path | None = None)
     If *destination* is None, the manager's own file path is overwritten.
     """
     dest = Path(destination) if destination else None
-    game_manager.save_to_file(dest)  # type: ignore[arg-type]
+    if dest is None:
+        game_manager.save_games()
+    else:
+        # when destination specified, temporarily change filename
+        original = game_manager.pgn_filename
+        game_manager.pgn_filename = str(dest)
+        game_manager.save_games()
+        game_manager.pgn_filename = original
 
 
 # alias so callers can continue to write `from blindbase.core.pgn import GameManager`
