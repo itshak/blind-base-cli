@@ -9,6 +9,9 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.align import Align
 
+from blindbase.core.settings import settings
+from blindbase.utils.move_format import move_to_str
+
 from blindbase.core.opening_tree import get_master_moves, OpeningStat
 
 
@@ -19,7 +22,8 @@ class OpeningTreePanel:
     def run(self) -> None:
         console = Console()
         try:
-            stats: List[OpeningStat] = get_master_moves(self.board, top_n=10)
+            top_n = settings.opening_tree.lichess_moves
+            stats: List[OpeningStat] = get_master_moves(self.board, top_n=top_n)
         except Exception as exc:
             console.print(f"[red]Failed to fetch opening stats: {exc}")
             console.input("Press Enter to continue…")
@@ -32,12 +36,17 @@ class OpeningTreePanel:
         tbl.add_column("Draw", justify="right")
         tbl.add_column("Black", justify="right")
         for idx, (san, w, d, b) in enumerate(stats, 1):
+            try:
+                mv = self.board.parse_san(san)
+                disp = move_to_str(self.board, mv, settings.ui.move_notation)
+            except Exception:
+                disp = san
             total = w + d + b
             if total == 0:
                 total = 1  # avoid div0
             tbl.add_row(
                 str(idx),
-                san,
+                disp,
                 str(total),
                 f"{w * 100 // total}%",
                 f"{d * 100 // total}%",

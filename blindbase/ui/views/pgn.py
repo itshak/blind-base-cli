@@ -11,6 +11,8 @@ from rich.table import Table
 from rich.text import Text
 
 from blindbase.ui.base import View
+from blindbase.core.settings import settings
+from blindbase.utils.move_format import move_to_str
 from blindbase.ui.board import render_board
 
 __all__ = ["PgnView"]
@@ -44,7 +46,7 @@ class PgnView(View):
         last_move_text = "Initial position"
         for idx in range(self._ply):
             next_node = node.variations[0]
-            san = board.san(next_node.move)
+            san = move_to_str(board, next_node.move, settings.ui.move_notation)
             move_no = idx // 2 + 1
             prefix = f"{move_no}{'.' if idx % 2 == 0 else '...'}"
             last_move_text = f"{prefix} {san}"
@@ -57,7 +59,7 @@ class PgnView(View):
         # Collect next moves (variations)
         next_moves: list[str] = []
         for v in node.variations:
-            next_moves.append(board.san(v.move))
+            next_moves.append(move_to_str(board, v.move, settings.ui.move_notation))
 
         # ------------------------------------------------------------------
         # Build Rich renderables -------------------------------------------

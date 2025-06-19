@@ -6,6 +6,8 @@ from typing import List
 
 import chess
 import chess.pgn
+from blindbase.core.settings import settings
+from blindbase.utils.move_format import move_to_str
 
 
 __all__ = ["GameNavigator"]
@@ -85,21 +87,19 @@ class GameNavigator:
             board.push(move)
         return board
 
-    def show_variations(self):
+    def show_variations(self) -> list[str]:
         if not self.current_node.variations:
             return []
         board_at_current_node = self.get_current_board()
-        variations_list = []
-        for i, variation_node in enumerate(self.current_node.variations):
+        variations: list[str] = []
+        for idx, variation_node in enumerate(self.current_node.variations, start=1):
             try:
-                san_move = board_at_current_node.san(variation_node.move)
-            except ValueError:
-                san_move = variation_node.move.uci() + " (raw UCI)"
-            except AssertionError:
-                san_move = variation_node.move.uci() + " (raw UCI, SAN assertion)"
+                mv_text = move_to_str(board_at_current_node, variation_node.move, settings.ui.move_notation)
+            except (ValueError, AssertionError):
+                mv_text = variation_node.move.uci()
             comment = f" ({variation_node.comment})" if variation_node.comment else ""
-            variations_list.append(f"{i+1}. {san_move}{comment}")
-        return variations_list
+            variations.append(f"{idx}. {mv_text}{comment}")
+        return variations
 
     def make_move(self, move_input):
         board = self.get_current_board()

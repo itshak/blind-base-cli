@@ -125,7 +125,10 @@ class Settings(BaseSettings):
             # reset section to remove stale keys
             doc[section] = TOMLDocument()
             for k, v in values.items():
-                doc[section][k] = v
+                if isinstance(v, Path):
+                    doc[section][k] = str(v)
+                else:
+                    doc[section][k] = v
 
         _assign("engine", self.engine.model_dump())
         _assign("opening_tree", self.opening_tree.model_dump())

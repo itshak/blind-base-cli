@@ -6,6 +6,12 @@ workflow so we can delete legacy PGN handling from ``cli.py`` gradually.
 from __future__ import annotations
 
 from pathlib import Path
+
+from blindbase.utils.board_desc import (
+    board_summary,
+    describe_piece_locations,
+    describe_file_or_rank,
+)
 from typing import Sequence
 
 import chess
@@ -104,9 +110,17 @@ class GameView:
         if cmd.lower() == "r":
             self._read_board_aloud()
             return False
-        if cmd.startswith("p "):
-            piece = cmd[2:].strip().upper()
+        if cmd == "p":
+            piece = input("Enter piece (KQRBNP or A for all, case controls colour): ").strip()
             self._list_piece_squares(piece)
+            return False
+        if cmd.startswith("p "):
+            piece = cmd[2:].strip()
+            self._list_piece_squares(piece)
+            return False
+        if cmd == "s":
+            spec = input("Enter file (a-h) or rank (1-8): ").strip()
+            self._describe_file_or_rank(spec)
             return False
         if cmd.startswith("s "):
             spec = cmd[2:].strip()
@@ -176,42 +190,16 @@ class GameView:
         input("Press Enter to continue…")
 
     def _read_board_aloud(self):
-        # Placeholder – print board FEN for now
-        print("Current FEN:")
-        print(self.nav.get_current_board().fen())
+        text = board_summary(self.nav.get_current_board())
+        print(text)
         input("Press Enter to continue…")
 
     def _list_piece_squares(self, piece: str):
-        board = self.nav.get_current_board()
-        piece_map = {
-            "K": chess.KING,
-            "Q": chess.QUEEN,
-            "R": chess.ROOK,
-            "B": chess.BISHOP,
-            "N": chess.KNIGHT,
-            "P": chess.PAWN,
-        }
-        if piece not in piece_map:
-            print("Invalid piece letter. Use KQRBNP.")
-            input("Press Enter to continue…")
-            return
-        squares = board.pieces(piece_map[piece], board.turn)
-        names = [chess.square_name(sq) for sq in squares]
-        print(f"{piece} squares: {' '.join(names) if names else 'none'}")
+        desc = describe_piece_locations(self.nav.get_current_board(), piece)
+        print(desc)
         input("Press Enter to continue…")
 
     def _describe_file_or_rank(self, spec: str):
-        board = self.nav.get_current_board()
-        if spec.lower() in "abcdefgh" and len(spec) == 1:
-            file_idx = ord(spec.lower()) - ord("a")
-            pieces = [board.piece_at(chess.square(file_idx, r)) for r in range(8)]
-            desc = "-".join(p.symbol() if p else "." for p in reversed(pieces))
-            print(f"File {spec}: {desc}")
-        elif spec in "12345678" and len(spec) == 1:
-            rank_idx = int(spec) - 1
-            pieces = [board.piece_at(chess.square(f, rank_idx)) for f in range(8)]
-            desc = "-".join(p.symbol() if p else "." for p in pieces)
-            print(f"Rank {spec}: {desc}")
-        else:
-            print("Invalid spec. Use a-h or 1-8.")
+        text = describe_file_or_rank(self.nav.get_current_board(), spec)
+        print(text)
         input("Press Enter to continue…")
