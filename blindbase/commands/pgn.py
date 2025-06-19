@@ -10,6 +10,7 @@ from blindbase.core import pgn as core_pgn
 from blindbase.ui.views.game import GameView
 from blindbase.core.navigator import GameNavigator
 
+from blindbase.ui.views.training import TrainingView
 __all__ = ["app", "CMD_NAME"]
 
 CMD_NAME = "pgn"
@@ -83,6 +84,24 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
             else:
                 print("Changes discarded.")
         # After playing a game, loop back to list for another selection
+
+
+@app.command()
+def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
+     """Opening training mode using PGN main lines."""
+     gm = core_pgn.load_games(file)
+     if not gm.games:
+         typer.echo("File contains no games", err=True)
+         raise typer.Exit(code=1)
+     from blindbase.ui.panels.game_list import GameListPanel
+     # choose game
+     panel = GameListPanel(gm.games, title=f"Select game to train from {file.name}")
+     panel.run()
+     if panel.selected_index is None:
+         raise typer.Exit()
+     game = gm.games[panel.selected_index]
+     # choose color
+     from rich.prompt import Prompt
 
 
 @app.command(name="list")
