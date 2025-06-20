@@ -6,7 +6,7 @@ and Phase 1 of the refactor compile successfully.
 """
 from __future__ import annotations
 
-from . import pgn, settings  # register sub-apps
+from . import pgn, settings, broadcasts  # register sub-apps
 
 import typer
 
@@ -16,6 +16,7 @@ app = typer.Typer(add_completion=False, help="BlindBase experimental commands")
 # Attach sub-commands -------------------------------------------------------
 app.add_typer(pgn.app, name=pgn.CMD_NAME)
 app.add_typer(settings.app, name="settings")
+app.add_typer(broadcasts.app, name="broadcasts")
 
 
 @app.callback(invoke_without_command=True)

@@ -48,6 +48,12 @@ class UISettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
 
+class BroadcastSettings(BaseSettings):
+    tournaments_limit: int = Field(10, description="Number of tournaments to fetch from Lichess API")
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+
 class OpeningTrainingSettings(BaseSettings):
     number_of_attempts: int = Field(3, description="Attempts allowed to guess each move")
 
@@ -67,6 +73,7 @@ class Settings(BaseSettings):
     opening_tree: OpeningTreeSettings = Field(default_factory=OpeningTreeSettings)
     ui: UISettings = Field(default_factory=UISettings)
     opening_training: OpeningTrainingSettings = Field(default_factory=OpeningTrainingSettings)
+    broadcasts: BroadcastSettings = Field(default_factory=BroadcastSettings)
     pgn: PGNSettings = Field(default_factory=PGNSettings)
 
     model_config = SettingsConfigDict(env_prefix="BB_", extra="ignore")
@@ -141,6 +148,7 @@ class Settings(BaseSettings):
         _assign("opening_tree", self.opening_tree.model_dump())
         _assign("ui", self.ui.model_dump())
         _assign("opening_training", self.opening_training.model_dump())
+        _assign("broadcasts", self.broadcasts.model_dump())
         _assign("pgn", self.pgn.model_dump())
 
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)

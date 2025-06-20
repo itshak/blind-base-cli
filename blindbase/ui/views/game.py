@@ -48,6 +48,9 @@ class GameView:
         self.nav = navigator
         self._flip = False
         self._console = Console(highlight=False, soft_wrap=False)
+        # clock tracking (updated from PGN comments like {[%clk 1:23:45]})
+        self.white_clock: str | None = None
+        self.black_clock: str | None = None
 
     # ------------------------------------------------------------------
     # Public helpers
@@ -155,8 +158,29 @@ class GameView:
     # Rendering helpers
     # ------------------------------------------------------------------
 
+    def _sync_clocks(self) -> None:
+        """Parse current node comment for [%clk ...] and update stored clocks."""
+        node = self.nav.current_node
+        if not node.comment:
+            return
+        import re
+        m = re.search(r"\[%clk\s+([0-9:]+)\]", node.comment)
+        if not m:
+            return
+        tstr = m.group(1)
+        # node.move is the move that *reached* this node
+        board = self.nav.get_current_board()
+        # side that just moved is opposite to side to move now
+        if board.turn == chess.WHITE:
+            self.black_clock = tstr
+        else:
+            self.white_clock = tstr
+
+
     def _render(self) -> None:
         console = self._console
+        # sync clocks before rendering
+        self._sync_clocks()
         console.clear()
         # ------------------------------------------------------------------
         # Header info -------------------------------------------------------
@@ -199,6 +223,14 @@ class GameView:
             header_lines.append(Text(" | ".join(extra_parts), style="dim"))
         for line in header_lines:
             console.print(line)
+        # Clock line
+        if self.white_clock or self.black_clock:
+            clock_txt = Text()
+            if self.white_clock:
+                clock_txt.append(f"White ⏰ {self.white_clock}  ", style="bold yellow")
+            if self.black_clock:
+                clock_txt.append(f"Black ⏰ {self.black_clock}", style="bold cyan")
+            console.print(clock_txt)
         console.print()  # blank line
         board = self.nav.get_current_board()
         # board lines
