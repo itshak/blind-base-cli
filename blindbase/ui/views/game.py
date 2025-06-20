@@ -20,6 +20,8 @@ from rich.text import Text
 
 from blindbase.core.navigator import GameNavigator
 from blindbase.ui.board import render_board
+from blindbase.core.settings import settings
+from blindbase.utils.move_format import move_to_str
 
 __all__ = ["GameView"]
 
@@ -223,19 +225,31 @@ class GameView:
             header_lines.append(Text(" | ".join(extra_parts), style="dim"))
         for line in header_lines:
             console.print(line)
-        # Clock line
-        if self.white_clock or self.black_clock:
-            clock_txt = Text()
-            if self.white_clock:
-                clock_txt.append(f"White ⏰ {self.white_clock}  ", style="bold yellow")
-            if self.black_clock:
-                clock_txt.append(f"Black ⏰ {self.black_clock}", style="bold cyan")
-            console.print(clock_txt)
-        console.print()  # blank line
+
         board = self.nav.get_current_board()
-        # board lines
-        for row in render_board(board, flipped=self._flip):
-            console.print(row)
+        if settings.ui.show_board:
+            # board lines
+            for row in render_board(board, flipped=self._flip):
+                console.print(row)
+            # Clock line below board (only if board shown or clocks requested)
+            if self.white_clock or self.black_clock:
+                clock_txt = Text()
+                if self.white_clock:
+                    clock_txt.append(f"White time: {self.white_clock}  ", style="bold yellow")
+                if self.black_clock:
+                    clock_txt.append(f"Black time: {self.black_clock}", style="bold cyan")
+                console.print(clock_txt)
+            console.print()  # blank line
+        else:
+            # if board hidden, still show clocks line if available
+            if self.white_clock or self.black_clock:
+                clock_txt = Text()
+                if self.white_clock:
+                    clock_txt.append(f"White time: {self.white_clock}  ", style="bold yellow")
+                if self.black_clock:
+                    clock_txt.append(f"Black time: {self.black_clock}", style="bold cyan")
+                console.print(clock_txt)
+            console.print()
         # info section
         turn_txt = "White" if board.turn else "Black"
         console.print(Text("Turn:", style="bold") + Text(f" {turn_txt}", style="yellow"))
@@ -259,10 +273,13 @@ class GameView:
             return Text("Last move:", style="bold") + Text(" Initial position", style="yellow")
         temp_board = self.nav.current_node.parent.board()
         move = self.nav.current_node.move
-        san = temp_board.san(move)
+        try:
+            mv_text = move_to_str(temp_board, move, settings.ui.move_notation)
+        except Exception:
+            mv_text = temp_board.san(move)
         move_no = temp_board.fullmove_number if temp_board.turn == chess.BLACK else temp_board.fullmove_number - 1
         prefix = f"{move_no}{'...' if temp_board.turn == chess.BLACK else '.'}"
-        return Text("Last move:", style="bold") + Text(f" {prefix} {san}", style="yellow")
+        return Text("Last move:", style="bold") + Text(f" {prefix} {mv_text}", style="yellow")
 
     def _show_help(self) -> None:
         from blindbase.ui.utils import show_help_panel

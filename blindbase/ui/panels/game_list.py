@@ -71,6 +71,9 @@ class GameListPanel:
             if cmd in {"p", "prev"} and page > 0:
                 page -= 1
                 continue
+            if cmd == "b":
+                # back to caller
+                return
             if cmd in {"q", "quit"}:
                 # leave selected_index as None
                 return

@@ -97,7 +97,11 @@ class GameNavigator:
                 mv_text = move_to_str(board_at_current_node, variation_node.move, settings.ui.move_notation)
             except (ValueError, AssertionError):
                 mv_text = variation_node.move.uci()
-            comment = f" ({variation_node.comment})" if variation_node.comment else ""
+            comment_raw = variation_node.comment or ""
+            # strip clock comments [%clk ...]
+            import re as _re
+            comment_clean = _re.sub(r"\[%clk\s+[^\]]+\]", "", comment_raw).strip()
+            comment = f" ({comment_clean})" if comment_clean else ""
             variations.append(f"{idx}. {mv_text}{comment}")
         return variations
 

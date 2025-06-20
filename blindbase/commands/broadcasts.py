@@ -66,7 +66,8 @@ def _get_json(url: str) -> Any:
 
 def _list_broadcasts() -> list[dict[str, Any]]:
     """Return a list of broadcast tournaments ordered by start date desc."""
-    data = _get_json(_API_BASE)
+    limit = settings.broadcasts.tournaments_limit
+    data = _get_json(f"{_API_BASE}?nb={limit}")
     if isinstance(data, list):
         # NDJSON list – each obj has 'tour'
         bcs = [obj.get("tour", obj) for obj in data]
@@ -75,9 +76,10 @@ def _list_broadcasts() -> list[dict[str, Any]]:
         bcs = data.get("broadcasts", [])
     # sort by start time descending
     bcs.sort(key=lambda bc: bc.get("startsAt", 0), reverse=True)
-    limit = settings.broadcasts.tournaments_limit
-    return bcs[:limit]
+    return bcs
 
+
+from blindbase.ui.utils import show_help_panel, clear_screen_and_prepare_for_new_content
 
 def _choose_from_table(
     rows: list[tuple[str, ...]],
@@ -90,13 +92,17 @@ def _choose_from_table(
     if not rows:
         typer.echo("No items to show", err=True)
         return None
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("#", justify="right", style="cyan")
-    for head in headers:
-        table.add_column(head)
-    for idx, row in enumerate(rows, 1):
-        table.add_row(str(idx), *row)
-    _console.print(Panel(table, title=title, border_style="green"))
+    def _render_table() -> None:
+        _console.clear()
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("#", justify="right", style="cyan")
+        for head in headers:
+            table.add_column(head)
+        for idx, row in enumerate(rows, 1):
+            table.add_row(str(idx), *row)
+        _console.print(Panel(table, title=title, border_style="green"))
+
+    _render_table()
 
     while True:
         choice = input(prompt).strip().lower()
@@ -105,19 +111,23 @@ def _choose_from_table(
         if allow_back and choice == "b":
             return -1
         if choice in {"h", "help"}:
-            typer.echo("Enter number to select. q to quit. o to open settings.")
+            cmds = [("<num>", "select item"), ("b", "back") if allow_back else None, ("o", "options / settings"), ("q", "quit list"), ("h", "this help")]
+            cmds = [c for c in cmds if c]
+            show_help_panel(_console, f"{title} – Help", cmds)  # type: ignore[arg-type]
+            input("Press Enter to continue…")
+            _render_table()
             continue
         if choice == "o":
-            from blindbase.ui.panels.settings_menu import run_settings_menu
-            run_settings_menu()
-            continue
+            return -2  # sentinel – caller should open settings and refresh
         if choice.isdigit():
             idx = int(choice) - 1
             if 0 <= idx < len(rows):
                 return idx
             typer.echo("Invalid index")
             continue
-        typer.echo("Unknown command – enter number, h, o, b, or q.")
+        _console.print("[red]Invalid input.")
+        input("Press Enter to continue…")
+        _render_table()
 
 
 def _download_pgn(url: str) -> str:
@@ -158,6 +168,10 @@ def follow() -> None:  # noqa: C901 complexity ok
         )
         if sel is None:
             raise typer.Exit()
+        if sel == -2:
+            from blindbase.ui.panels.settings_menu import run_settings_menu
+            run_settings_menu()
+            continue  # redraw tournaments after settings
         tour = tours[sel]
         while True:  # rounds loop
             tour_id = tour["id"]
@@ -188,6 +202,10 @@ def follow() -> None:  # noqa: C901 complexity ok
             )
             if rsel is None:
                 raise typer.Exit()
+            if rsel == -2:
+                from blindbase.ui.panels.settings_menu import run_settings_menu
+                run_settings_menu()
+                continue  # refresh rounds after settings
             if rsel == -1:
                 break  # back to tournaments
             rnd = rounds[rsel]
@@ -235,35 +253,3 @@ def follow() -> None:  # noqa: C901 complexity ok
                 navigator = GameNavigator(game)
                 GameView(navigator).run()
                 # after game view returns, go back to games list
-    tmp = tempfile.NamedTemporaryFile("w+", suffix=".pgn", delete=False)
-    tmp.write(pgn_text)
-    tmp.flush()
-    tmp_path = Path(tmp.name)
-
-    # ------------------------------------------------------------------
-    # 4. Reuse PGN flow --------------------------------------------------
-    # ------------------------------------------------------------------
-    games = []
-    with open(tmp_path, "r", encoding="utf-8") as fh:
-        while True:
-            game = chess.pgn.read_game(fh)
-            if game is None:
-                break
-            games.append(game)
-    if not games:
-        typer.echo("No games in PGN", err=True)
-        raise typer.Exit(code=1)
-
-    panel = GameListPanel(games, title=f"Games – {tour['name']} {rnd['name']}", allow_edit=False)
-    panel.run()
-    if panel.selected_index is None:
-        # user likely pressed 'b' inside GameListPanel? not supported, just loop back to rounds
-        continue
-    game = games[panel.selected_index]
-
-    navigator = GameNavigator(game)
-    GameView(navigator).run()
-
-    tmp.close()
-    # not deleting tempfile automatically for debugging; could unlink here.
-    # Path(tmp_path).unlink(missing_ok=True)

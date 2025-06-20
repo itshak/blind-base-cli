@@ -71,5 +71,8 @@ def move_to_str(board: chess.Board, move: chess.Move, style: str) -> str:  # noq
             out = piece_map[san[0]] + " " + out[1:]
         if "x" in san:
             out = out.replace("x", " takes ", 1)
+        # handle pawn capture leading file for anna
+        if style in {"anna"} and san[0] in _anna_files and " takes " in out:
+            out = _anna_files[san[0]] + " " + out[1:]
         out = re.sub(r"\s+", " ", out)
     return out.strip()
