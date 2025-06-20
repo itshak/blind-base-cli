@@ -48,6 +48,12 @@ class UISettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
 
+class OpeningTrainingSettings(BaseSettings):
+    number_of_attempts: int = Field(3, description="Attempts allowed to guess each move")
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+
 class PGNSettings(BaseSettings):
     directory: Path = Field(Path("."), description="Default PGN files directory")
 
@@ -60,6 +66,7 @@ class Settings(BaseSettings):
     engine: EngineSettings = Field(default_factory=EngineSettings)
     opening_tree: OpeningTreeSettings = Field(default_factory=OpeningTreeSettings)
     ui: UISettings = Field(default_factory=UISettings)
+    opening_training: OpeningTrainingSettings = Field(default_factory=OpeningTrainingSettings)
     pgn: PGNSettings = Field(default_factory=PGNSettings)
 
     model_config = SettingsConfigDict(env_prefix="BB_", extra="ignore")
@@ -133,6 +140,7 @@ class Settings(BaseSettings):
         _assign("engine", self.engine.model_dump())
         _assign("opening_tree", self.opening_tree.model_dump())
         _assign("ui", self.ui.model_dump())
+        _assign("opening_training", self.opening_training.model_dump())
         _assign("pgn", self.pgn.model_dump())
 
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)

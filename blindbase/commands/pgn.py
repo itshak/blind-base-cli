@@ -95,7 +95,7 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
         raise typer.Exit(code=1)
     from blindbase.ui.panels.game_list import GameListPanel
     # choose game
-    panel = GameListPanel(gm.games, title=f"Select game to train from {file.name}")
+    panel = GameListPanel(gm.games, title=f"Select game to train from {file.name}", allow_edit=False)
     panel.run()
     if panel.selected_index is None:
         raise typer.Exit()
@@ -105,7 +105,11 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     color = Prompt.ask("Train as (w)hite or (b)lack?", choices=["w", "b"], default="w")
     player_is_white = color == "w"
     nav = GameNavigator(game)
-    TrainingView(nav, player_is_white).run()
+    try:
+        TrainingView(nav, player_is_white).run()
+    except TrainingView.ExitRequested:
+        # back to list instead of quitting whole app
+        return train(file)
 
 
 @app.command(name="list")

@@ -27,10 +27,11 @@ class GameListPanel:
     :pyattr:`selected_index` (or ``None`` if the user quit).
     """
 
-    def __init__(self, games: List[chess.pgn.Game], *, title: str | None = None):
+    def __init__(self, games: List[chess.pgn.Game], *, title: str | None = None, allow_edit: bool = True):
         self.games = games
         self.title = title or "Games List"
         self.page_size = max(1, settings.ui.games_per_page)
+        self.allow_edit = allow_edit
         self.selected_index: int | None = None
         self.new_game_headers: dict | None = None
         self.delete_index: int | None = None
@@ -56,10 +57,10 @@ class GameListPanel:
             if cmd in {"h", "help"}:
                 self._show_help()
                 continue
-            if cmd == "n":
+            if self.allow_edit and cmd == "n":
                 self._prompt_new_game()
                 return
-            if cmd.startswith("d ") and cmd[2:].isdigit():
+            if self.allow_edit and cmd.startswith("d ") and cmd[2:].isdigit():
                 idx = int(cmd[2:]) - 1
                 if 0 <= idx < total_games:
                     self._confirm_delete(idx)
@@ -146,14 +147,19 @@ class GameListPanel:
         from blindbase.ui.utils import show_help_panel
         cmds = [
             ("<num>", "open game"),
+        ]
+        if self.allow_edit:
+            cmds.extend([
+                ("n", "new game"),
+                ("d <num>", "delete game"),
+            ])
+        cmds.extend([
             ("f", "next page"),
             ("p", "previous page"),
-            ("n", "add new game"),
-            ("d <num>", "delete game"),
             ("o", "options / settings"),
             ("q", "quit list"),
             ("h", "this help"),
-        ]
+        ])
         show_help_panel(self._console, "Games List – Help", cmds)
         self._console.input("Press Enter to continue…")
 

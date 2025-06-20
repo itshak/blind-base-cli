@@ -186,6 +186,15 @@ def run_settings_menu() -> None:
                             changed = True
                     else:
                         input("Invalid option. Press Enter…")
+                elif isinstance(val, bool):
+                    console.print(Text(f"{label.lower()}?", style="bold"))
+                    console.print(Panel("1. Yes\n2. No", title="Options", border_style="blue"))
+                    sel = input("Select number: ").strip()
+                    if sel in {"1", "2"}:
+                        if _set_setting(full_key, sel):
+                            changed = True
+                    else:
+                        input("Invalid option. Press Enter…")
                 else:
                     new_val_str = input(f"Enter new value for {label} (current {val}): ").strip()
                     if new_val_str:
