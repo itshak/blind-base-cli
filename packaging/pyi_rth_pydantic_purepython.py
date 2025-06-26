@@ -56,6 +56,30 @@ if 'pydantic_core' not in sys.modules:
     stub.SchemaValidator = _NoCoreStub
     stub.SchemaSerializer = _NoCoreStub
 
+    # Minimal replacement for the custom error class
+    class PydanticCustomError(Exception):  # pragma: no cover
+        """Placeholder matching the public interface of pydantic_core.PydanticCustomError."""
+
+        def __init__(self, kind: str, message_template: str, context: dict | None = None):
+            self.kind = kind
+            self.message_template = message_template
+            self.context = context or {}
+            super().__init__(self.message_template.format(**self.context))
+
+        def __reduce__(self):  # required for pickle compat
+            return (
+                PydanticCustomError,
+                (self.kind, self.message_template, self.context),
+            )
+
+    stub.PydanticCustomError = PydanticCustomError
+
+    # Create a very small sub-module to satisfy `from pydantic_core import core_schema`
+    core_schema_module = types.ModuleType('pydantic_core.core_schema')
+    sys.modules['pydantic_core.core_schema'] = core_schema_module
+    # Re-export it as an attribute so `from pydantic_core import core_schema` works
+    stub.core_schema = core_schema_module
+
     stub.__version__ = '0.0.0'
 
     # Finally register stub with the import machinery

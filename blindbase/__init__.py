@@ -12,10 +12,10 @@ frozen executable** when the wheel for the current architecture is absent.
 
 import os
 
-__version__ = "0.10.9"
+__version__ = "0.10.11"
 
 # Legacy imports (SettingsManager, GameManager, BroadcastManager, GameNavigator)
-# were removed in v0.10.8 together with the monolithic CLI.  Their functionality
+# were removed in v0.10.11 together with the monolithic CLI.  Their functionality
 # now resides in `blindbase.core.*` and the Typer CLI commands.
 
 from .analysis import (
