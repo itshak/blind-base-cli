@@ -44,6 +44,8 @@ PYINSTALLER_COMMON_OPTS_TEMPLATE = [
     "--hidden-import",
     "tomlkit",
 
+    "--exclude-module",
+    "pydantic_core",
     "blindbase/menu.py",
 ]
 
