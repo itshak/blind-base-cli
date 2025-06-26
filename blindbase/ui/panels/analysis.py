@@ -75,11 +75,16 @@ class AnalysisPanel:
             while not self._stop:
                 live.update(Group(Text(""), self._render_panel()))
                 live.refresh()
-                # check for user keypress without blocking
+                # check for user keypress without blocking; pyenv/IDE terminal can
+                # report stdin as ready even when no real keystroke is pending.
                 if select.select([sys.stdin], [], [], 0)[0]:
-                    self._user_choice = sys.stdin.readline().strip()
-                    self._stop = True
-                    break
+                    # Read a single line – will be empty string if nothing was
+                    # actually entered.  Ignore such spurious wake-ups.
+                    line = sys.stdin.readline()
+                    if line:
+                        self._user_choice = line.strip()
+                        self._stop = True
+                        break
                 time.sleep(0.25)
             if self._error:
                 final_panel = Align.center(f"[red]{self._error}")

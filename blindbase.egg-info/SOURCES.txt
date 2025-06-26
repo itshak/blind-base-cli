@@ -5,11 +5,7 @@ blindbase/__init__.py
 blindbase/__main__.py
 blindbase/analysis.py
 blindbase/app.py
-blindbase/broadcast.py
 blindbase/menu.py
-blindbase/navigator.py
-blindbase/settings.py
-blindbase/storage.py
 blindbase.egg-info/PKG-INFO
 blindbase.egg-info/SOURCES.txt
 blindbase.egg-info/dependency_links.txt

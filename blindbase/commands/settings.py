@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional
+import os
 
 import typer
 from rich.console import Console
@@ -26,7 +27,15 @@ def list_settings(section: Optional[str] = typer.Argument(None, help="Optional s
             for k, v in obj.model_dump().items():
                 _walk(f"{prefix}{k}.", v)
         else:
-            tbl.add_row(prefix[:-1], str(obj))
+            key_name = prefix[:-1]
+            if key_name == "engine.path":
+                # Treat None, empty string or an obviously invalid value (it contains OS path separators)
+                # as meaning the built-in Stockfish binary will be used.
+                invalid = obj is None or str(obj).strip() == "" or (isinstance(obj, str) and os.pathsep in obj)
+                value_str = "Built-in" if invalid else str(obj)
+            else:
+                value_str = str(obj)
+            tbl.add_row(key_name, value_str)
 
     target = getattr(settings, section) if section else settings
     _walk("" if section else "", target)
@@ -61,7 +70,12 @@ def set_setting(key: str, value: str):
     elif isinstance(current, Path):
         new_val = Path(value).expanduser()
     else:
-        new_val = value
+        new_val = value.strip() if isinstance(value, str) else value
+
+    # Special handling: allow resetting engine.path to built-in by entering an
+    # empty string or the word "default".
+    if key == "engine.path" and (new_val == "" or str(new_val).lower() == "default"):
+        new_val = None
     # basic enum validation
     if isinstance(current, str) and isinstance(new_val, str):
         choices = None

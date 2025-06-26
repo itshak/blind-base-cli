@@ -40,7 +40,7 @@ class _SingletonEngine:
                     cls._engine = chess.engine.SimpleEngine.popen_uci(str(exe))
                 except FileNotFoundError as exc:
                     raise EngineError(
-                        "Stockfish executable not found. Set STOCKFISH_EXECUTABLE env var."
+                        f"Stockfish executable not found at '{exe}'. Set STOCKFISH_EXECUTABLE env var."
                     ) from exc
                 atexit.register(cls.close)
             return cls._engine
@@ -48,8 +48,11 @@ class _SingletonEngine:
     @staticmethod
     def _detect_engine_path() -> str:
         """Return best-guess Stockfish executable path for current platform."""
-        base = Path(__file__).resolve().parent.parent  # blindbase/
-        eng_dir = base / "engine"
+        import sys
+        # If running from a PyInstaller bundle, engine binaries are unpacked to
+        # the temporary _MEIPASS directory under an "engine" subfolder.
+        base_path = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+        eng_dir = base_path / "engine"
         if not eng_dir.exists():
             return "stockfish"  # fallback to PATH
         import platform

@@ -34,7 +34,7 @@ PYINSTALLER_COMMON_OPTS_TEMPLATE = [
     "--name",
     "{name}",
     "--add-binary",
-    "{engine_path}:engine",
+    "{engine_path}:engine/mac",
     "--hidden-import",
     "pydantic",
     "--hidden-import",

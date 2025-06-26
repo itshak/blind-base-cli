@@ -27,7 +27,9 @@ class EngineSettings(BaseSettings):
     lines: int = Field(3, description="Number of PV lines to show")
     path: str | None = Field(None, description="Override path to Stockfish executable")
 
-    model_config = SettingsConfigDict(extra="ignore")
+    # Use a dedicated env_prefix so that the OS PATH environment variable
+    # does not inadvertently populate the `path` field.
+    model_config = SettingsConfigDict(extra="ignore", env_prefix="BB_ENGINE_")
 
 
 class OpeningTreeSettings(BaseSettings):
@@ -122,7 +124,27 @@ class Settings(BaseSettings):
         if not raw:
             # first run, try json migration
             raw = cls._migrate_json()
-        return cls(**raw)
+        inst = cls(**raw)
+        # ------------------------------------------------------------------
+        # Post-processing for engine.path
+        # ------------------------------------------------------------------
+        # In some previous versions a bug saved the full $PATH string into
+        # engine.path.  Detect such cases (the value equals the current PATH or
+        # contains multiple path-separator entries) and reset to *None* so that
+        # the built-in Stockfish bundled with BlindBase is used by default.
+        if inst.engine.path:
+            is_accidentally_path_env = inst.engine.path == os.environ.get("PATH") or os.pathsep in inst.engine.path
+            if is_accidentally_path_env:
+                inst.engine.path = None
+
+        # If the user explicitly configured a custom Stockfish executable path
+        # make it available to the Engine helper through the environment.  We
+        # expand a leading '~' so both GUI and subprocesses resolve the same
+        # absolute file location.
+        if inst.engine.path:
+            os.environ["STOCKFISH_EXECUTABLE"] = str(Path(inst.engine.path).expanduser())
+
+        return inst
 
     # ------------------------------------------------------------------
     # save

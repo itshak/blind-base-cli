@@ -29,7 +29,8 @@ echo "[+] Building executable (arm64)"
 python -m PyInstaller \
         --clean --onefile --target-arch arm64 \
         --name blindbase_mac_arm64 \
-        --add-binary blindbase/engine/mac/stockfish:engine \
+        --add-binary blindbase/engine/mac/stockfish:engine/mac \
+        --add-binary blindbase/engine/mac/stockfish_x86:engine/mac \
         --hidden-import pydantic \
         --hidden-import pydantic_settings \
         --hidden-import tomlkit \

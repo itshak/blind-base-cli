@@ -49,7 +49,8 @@ function build_with() {
   echo "[+] Building $OUT_NAME ($ARCH_FLAG)"
   python -m PyInstaller --clean --onefile --target-arch "$ARCH_FLAG" \
          --name "$OUT_NAME" \
-         --add-binary "$ENGINE_PATH:engine" \
+         --add-binary "$ENGINE_PATH:engine/mac" \
+
          --hidden-import pydantic \
          --hidden-import pydantic_settings \
          --hidden-import tomlkit \
