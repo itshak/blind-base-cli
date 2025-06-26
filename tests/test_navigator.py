@@ -1,7 +1,7 @@
 import io
 import chess
 import chess.pgn
-from blindbase.navigator import GameNavigator
+from blindbase.core.navigator import GameNavigator
 
 
 def _make_game():
@@ -21,5 +21,5 @@ def test_make_move_and_back():
     # one ply made
     assert nav.get_current_board().fen() != start_fen
     # go back
-    assert nav.go_back()
+    assert nav.go_back() is True
     assert nav.get_current_board().fen() == start_fen 

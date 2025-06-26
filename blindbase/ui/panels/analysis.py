@@ -86,11 +86,16 @@ class AnalysisPanel:
             else:
                 final_panel = Group(Text(""), self._render_panel(final=True))
         # after Live closes, prompt user (panel already displayed in terminal)
+        # freeze lines at moment of prompt to avoid race with engine updates
+        with self._lock:
+            frozen_pv = [pv[:] for pv in self._pv_list]
         choice = console.input("Enter engine line to make it on board or press Enter to exit: ").strip()
-        if choice.isdigit() and 1 <= int(choice) <= len(self._pv_list):
-            mv = self._pv_list[int(choice)-1][0] if self._pv_list[int(choice)-1] else None
-            if mv:
-                self.selected_move: chess.Move | None = mv  # type: ignore[attr-defined]
+        if choice.isdigit():
+            idx = int(choice)
+            if 1 <= idx <= len(frozen_pv):
+                mv = frozen_pv[idx - 1][0] if frozen_pv[idx - 1] else None
+                if mv:
+                    self.selected_move: chess.Move | None = mv  # type: ignore[attr-defined]
 
             
 

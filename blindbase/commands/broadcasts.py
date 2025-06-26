@@ -40,6 +40,11 @@ CMD_NAME = "broadcasts"
 app = typer.Typer(help="Follow Lichess broadcast tournaments")
 
 _API_BASE = "https://lichess.org/api/broadcast"
+
+
+def _pgn_stream_url(round_id: str, game_id: str) -> str:
+    """Return Lichess PGN stream endpoint for a specific broadcast game."""
+    return f"{_API_BASE}/round/{round_id}/game/{game_id}.pgn/stream"
 _console = Console()
 
 

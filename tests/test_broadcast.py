@@ -1,4 +1,4 @@
-from blindbase.broadcast import _pgn_stream_url
+from blindbase.commands.broadcasts import _pgn_stream_url
 
 
 def test_stream_url():

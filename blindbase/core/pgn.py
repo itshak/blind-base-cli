@@ -10,7 +10,46 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Sequence
 
-from blindbase.storage import GameManager
+import chess.pgn
+
+class GameManager:
+    """Lightweight PGN file manager (no UI).
+
+    Handles reading a PGN file into an in-memory list of `chess.pgn.Game`
+    objects and writing them back.
+    """
+
+    def __init__(self, pgn_filename: str):
+        self.pgn_filename = pgn_filename
+        self.games: list[chess.pgn.Game] = []
+        self._load_games()
+
+    # ---------------------------------------------------------------------
+    # Internal helpers
+    # ---------------------------------------------------------------------
+    def _load_games(self) -> None:
+        try:
+            with open(self.pgn_filename, "r", encoding="utf-8") as fh:
+                while (game := chess.pgn.read_game(fh)) is not None:
+                    self.games.append(game)
+        except FileNotFoundError:
+            # treat missing file as empty PGN; it will be created on save
+            pass
+
+    # ---------------------------------------------------------------------
+    # Public API
+    # ---------------------------------------------------------------------
+    def save_games(self) -> bool:
+        """Write *all* games back to :pyattr:`pgn_filename`. Returns success."""
+        try:
+            with open(self.pgn_filename, "w", encoding="utf-8") as fh:
+                for g in self.games:
+                    exporter = chess.pgn.FileExporter(fh)
+                    g.accept(exporter)
+            return True
+        except Exception as exc:  # pragma: no cover – only logs
+            print(f"[!] Error writing PGN: {exc}")
+            return False
 
 __all__ = [
     "GameManager",

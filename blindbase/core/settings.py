@@ -157,3 +157,5 @@ class Settings(BaseSettings):
 
 # singleton instance
 settings = Settings.load()
+
+__all__ = ["Settings", "settings"]

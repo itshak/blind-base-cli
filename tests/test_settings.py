@@ -1,16 +1,14 @@
-import os
-import json
-from blindbase.settings import SettingsManager
+from blindbase.core.settings import settings as default_settings
 
 
-def test_settings_load_save(tmp_path):
-    settings_file = tmp_path / "settings.json"
-    mgr = SettingsManager(settings_filename=str(settings_file))
-    # change a value and ensure persistence
-    mgr.set("engine_lines_count", 7)
-    assert mgr.get("engine_lines_count") == 7
-    # reload into new instance
-    mgr2 = SettingsManager(settings_filename=str(settings_file))
-    assert mgr2.get("engine_lines_count") == 7
+def test_settings_roundtrip():
+    SettingsClass = type(default_settings)
+    s = SettingsClass()
+    # change value
+    s.engine.lines = 7
+    # serialise + rehydrate
+    data = s.model_dump()
+    s2 = Settings(**data)
+    assert s2.engine.lines == 7
     # default untouched
-    assert mgr2.get("lichess_moves_count") == 5 
+    assert s2.opening_tree.lichess_moves == 5
