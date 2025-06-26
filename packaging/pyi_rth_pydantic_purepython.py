@@ -82,5 +82,15 @@ if 'pydantic_core' not in sys.modules:
 
     stub.__version__ = '0.0.0'
 
+        # Provide empty compiled-extension submodule so that relative imports like
+    # `from pydantic_core import _pydantic_core` or `import pydantic_core._pydantic_core`
+    # succeed even in pure-python mode.
+    core_so_stub = types.ModuleType('pydantic_core._pydantic_core')
+    sys.modules['pydantic_core._pydantic_core'] = core_so_stub
+    stub._pydantic_core = core_so_stub
+
+    # Mark as namespace package for completeness
+    stub.__path__ = []  # type: ignore[attr-defined]
+
     # Finally register stub with the import machinery
     sys.modules['pydantic_core'] = stub
