@@ -35,7 +35,13 @@ PYINSTALLER_COMMON_OPTS_TEMPLATE = [
     "{name}",
     "--add-binary",
     "{engine_path}:engine",
-    "blindbase/cli.py",
+    "--hidden-import",
+    "pydantic",
+    "--hidden-import",
+    "pydantic_settings",
+    "--hidden-import",
+    "tomlkit",
+    "blindbase/menu.py",
 ]
 
 PYI_CMD_ARM = f"{sys.executable} -m PyInstaller"

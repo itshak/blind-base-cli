@@ -1,7 +1,7 @@
 import sys
 import typer
 
-from blindbase.cli import main as legacy_main
+from blindbase.menu import main as _menu_main
 
 app = typer.Typer(add_help_option=False, no_args_is_help=False, help="BlindBase – accessible chess-study CLI")
 
@@ -17,9 +17,11 @@ def play(
         pgn = None
     if not isinstance(engine, str):
         engine = None
-    # Reconstruct argv expected by legacy_main
-    sys.argv = ["blindbase-legacy"] + ([pgn] if pgn else []) + ([engine] if engine else [])
-    legacy_main()
+    argv: list[str] = []
+    if pgn:
+        argv.append(pgn)
+    # NOTE: current refactor ignores --engine at menu level; keep for future use.
+    _menu_main(argv)
 
 
 @app.callback(invoke_without_command=True)

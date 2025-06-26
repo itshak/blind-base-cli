@@ -50,7 +50,10 @@ function build_with() {
   python -m PyInstaller --clean --onefile --target-arch "$ARCH_FLAG" \
          --name "$OUT_NAME" \
          --add-binary "$ENGINE_PATH:engine" \
-         blindbase/cli.py
+         --hidden-import pydantic \
+         --hidden-import pydantic_settings \
+         --hidden-import tomlkit \
+         blindbase/menu.py
   deactivate
 }
 

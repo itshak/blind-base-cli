@@ -11,7 +11,7 @@ set -euo pipefail
 PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 cd "$PROJECT_ROOT"
 
-VENV_DIR="venv-build-arm"
+VENV_DIR="venv-arm"
 PY_VERSION=${PY_VERSION:-"python3"}  # allow override
 
 if [[ ! -d "$VENV_DIR" ]]; then
@@ -30,6 +30,9 @@ python -m PyInstaller \
         --clean --onefile --target-arch arm64 \
         --name blindbase_mac_arm64 \
         --add-binary blindbase/engine/mac/stockfish:engine \
-        blindbase/cli.py
+        --hidden-import pydantic \
+        --hidden-import pydantic_settings \
+        --hidden-import tomlkit \
+        blindbase/menu.py
 
 echo "[✓] Built dist/blindbase_mac_arm64" 

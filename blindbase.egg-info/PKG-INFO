@@ -105,7 +105,7 @@ python -m PyInstaller \
     --clean --onefile --target-arch arm64 \
     --name blindbase_mac_arm64 \
     --add-binary blindbase/engine/mac/stockfish:engine \
-    blindbase/cli.py
+    blindbase/menu.py
 ```
 
 `dist/blindbase_mac_arm64` runs on Apple-Silicon and Intel Macs (via Rosetta).
@@ -123,7 +123,7 @@ Download them from the **Actions → run → Artefacts** section.
 
 ```
 blindbase/
- ├─ cli.py               # classic interactive UI
+ ├─ menu.py              # interactive main menu
  ├─ app.py               # Typer entry-point
  ├─ engine/              # bundled Stockfish binaries (for PyInstaller builds)
  │   ├─ mac/stockfish          (arm64)

@@ -19,9 +19,10 @@ DIST_DIR = PROJECT_ROOT / "dist"
 NAME = "blindbase"
 
 PYINSTALLER_CMD = (
-    f"{sys.executable} -m PyInstaller --clean --onefile --name {{name}} "
-    "--add-binary \"blindbase/engine/win/stockfish.exe;engine\" "
-    "blindbase/cli.py"
+    f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} "
+    "--add-binary 'blindbase/engine/win/stockfish.exe;engine' "
+    "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import tomlkit "
+    "blindbase/menu.py"
 )
 
 
