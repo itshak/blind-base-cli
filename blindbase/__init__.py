@@ -1,9 +1,18 @@
-import os
-# Ensure the bundled executable uses pydantic's pure-python fallback when the compiled
-# shared library `pydantic_core` is missing (e.g., in PyInstaller one-file builds).
-os.environ.setdefault("PYDANTIC_PUREPYTHON", "1")
+"""BlindBase package init.
 
-__version__ = "0.10.8"
+We *do not* unconditionally force Pydantic to use its
+pure-python fallback here.  The compiled Rust extension
+`pydantic_core` is desirable on native platforms (e.g. arm64 macOS)
+for performance and compatibility.
+
+A dedicated PyInstaller runtime-hook (`packaging/pyi_rth_pydantic_purepython.py`)
+sets `PYDANTIC_PUREPYTHON=1` and injects a stub module **only inside the
+frozen executable** when the wheel for the current architecture is absent.
+"""
+
+import os
+
+__version__ = "0.10.9"
 
 # Legacy imports (SettingsManager, GameManager, BroadcastManager, GameNavigator)
 # were removed in v0.10.8 together with the monolithic CLI.  Their functionality
