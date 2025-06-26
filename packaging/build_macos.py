@@ -43,7 +43,6 @@ PYINSTALLER_COMMON_OPTS_TEMPLATE = [
     "pydantic_settings",
     "--hidden-import",
     "tomlkit",
-
     "--exclude-module",
     "pydantic_core",
     "blindbase/menu.py",
@@ -65,7 +64,11 @@ def build_arm() -> None:
 
 
 def build_x86() -> None:
-    opts = " ".join(PYINSTALLER_COMMON_OPTS_TEMPLATE).format(name=NAME_X86, engine_path=ENGINE_X86_PATH)
+    opts_list = PYINSTALLER_COMMON_OPTS_TEMPLATE + [
+        "--exclude-module",
+        "pydantic_core",
+    ]
+    opts = " ".join(opts_list).format(name=NAME_X86, engine_path=ENGINE_X86_PATH)
     env = dict(os.environ)
     # Force pydantic to fall back to the pure-python implementation so that
     # the arm64 binary wheel for pydantic-core is not imported when running
