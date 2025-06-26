@@ -41,6 +41,8 @@ PYINSTALLER_COMMON_OPTS_TEMPLATE = [
     "pydantic_settings",
     "--hidden-import",
     "tomlkit",
+    "--exclude-module",
+    "pydantic_core",
     "blindbase/menu.py",
 ]
 
@@ -61,7 +63,12 @@ def build_arm() -> None:
 
 def build_x86() -> None:
     opts = " ".join(PYINSTALLER_COMMON_OPTS_TEMPLATE).format(name=NAME_X86, engine_path=ENGINE_X86_PATH)
-    run(f"{PYI_CMD_X86} {opts}")
+    env = dict(os.environ)
+    # Force pydantic to fall back to the pure-python implementation so that
+    # the arm64 binary wheel for pydantic-core is not imported when running
+    # under Rosetta.
+    env["PYDANTIC_PUREPYTHON"] = "1"
+    run(f"{PYI_CMD_X86} {opts}", env=env)
 
 
 def main() -> None:
