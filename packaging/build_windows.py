@@ -26,9 +26,9 @@ PYINSTALLER_CMD = (
 )
 
 
-def run(cmd: str) -> None:
+def run(cmd: str, env: dict | None = None) -> None:
     print(f"\n>>> {cmd}")
-    subprocess.check_call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True, env=env)
 
 
 def main() -> None:
