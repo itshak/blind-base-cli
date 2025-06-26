@@ -50,7 +50,7 @@ function build_with() {
   python -m PyInstaller --clean --onefile --target-arch "$ARCH_FLAG" \
          --name "$OUT_NAME" \
          --add-binary "$ENGINE_PATH:engine/mac" \
-
+         --runtime-hook packaging/pyi_rth_pydantic_purepython.py \
          --hidden-import pydantic \
          --hidden-import pydantic_settings \
          --hidden-import tomlkit \

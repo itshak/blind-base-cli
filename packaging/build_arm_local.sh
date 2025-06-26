@@ -31,6 +31,7 @@ python -m PyInstaller \
         --name blindbase_mac_arm64 \
         --add-binary blindbase/engine/mac/stockfish:engine/mac \
         --add-binary blindbase/engine/mac/stockfish_x86:engine/mac \
+        --runtime-hook packaging/pyi_rth_pydantic_purepython.py \
         --hidden-import pydantic \
         --hidden-import pydantic_settings \
         --hidden-import tomlkit \
