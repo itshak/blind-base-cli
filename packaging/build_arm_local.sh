@@ -33,6 +33,7 @@ python -m PyInstaller \
         --add-binary blindbase/engine/mac/stockfish_x86:engine/mac \
         --runtime-hook packaging/pyi_rth_pydantic_purepython.py \
         --hidden-import pydantic \
+        --hidden-import pydantic_core \
         --hidden-import pydantic_settings \
         --hidden-import tomlkit \
         blindbase/menu.py
