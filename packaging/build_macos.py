@@ -35,8 +35,6 @@ PYINSTALLER_COMMON_OPTS_TEMPLATE = [
     "{name}",
     "--add-binary",
     "{engine_path}:engine/mac",
-    "--runtime-hook",
-    "packaging/pyi_rth_pydantic_purepython.py",
     "--hidden-import",
     "pydantic",
     "--hidden-import",
@@ -45,8 +43,6 @@ PYINSTALLER_COMMON_OPTS_TEMPLATE = [
     "tomlkit",
     "--hidden-import",
     "tkinter",
-    "--exclude-module",
-    "pydantic_core",
     "blindbase/menu.py",
 ]
 

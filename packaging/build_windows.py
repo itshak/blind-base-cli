@@ -21,7 +21,7 @@ NAME = "blindbase"
 PYINSTALLER_CMD = (
     f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} "
     "--add-binary blindbase/engine/win/stockfish.exe;engine/win "
-    "--runtime-hook packaging/pyi_rth_pydantic_purepython.py --hidden-import pydantic --hidden-import pydantic_settings --hidden-import tomlkit --hidden-import tkinter "
+    "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import tomlkit --hidden-import tkinter "
     "blindbase/menu.py"
 )
 
