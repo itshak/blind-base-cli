@@ -37,9 +37,6 @@ def main() -> None:
         shutil.rmtree(DIST_DIR)
     DIST_DIR.mkdir(parents=True, exist_ok=True)
 
-    env = dict(os.environ)
-    # Ensure PyInstaller uses pure-python pydantic to avoid wheel mismatch on older runners
-    env.setdefault("PYDANTIC_PUREPYTHON", "1")
     run(PYINSTALLER_CMD, env=env)
     print(f"Executable created at {DIST_DIR / (NAME + '.exe')}")
 
