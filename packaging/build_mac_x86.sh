@@ -45,6 +45,11 @@ function build_x86() {
   arch -x86_64 python -m PyInstaller --clean --onefile --target-arch x86_64 \
          --name "$OUT_NAME" \
          --add-binary "blindbase/engine/mac/stockfish_x86:engine/mac" \
+         --hidden-import pydantic \
+         --hidden-import pydantic_core \
+         --hidden-import pydantic_settings \
+         --hidden-import typing_extensions \
+         --hidden-import tomli \
          blindbase/menu.py
   deactivate
 }

@@ -45,6 +45,11 @@ function build_arm() {
   python -m PyInstaller --clean --onefile --target-arch arm64 \
          --name "$OUT_NAME" \
          --add-binary "blindbase/engine/mac/stockfish:engine/mac" \
+         --hidden-import pydantic \
+         --hidden-import pydantic_core \
+         --hidden-import pydantic_settings \
+         --hidden-import typing_extensions \
+         --hidden-import tomli \
          blindbase/menu.py
   deactivate
 }
