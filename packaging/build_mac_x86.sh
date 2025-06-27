@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 # Build **x86_64-only** single-file executable of BlindBase.
 #
-# Prerequisite: Rosetta installed and an Intel Python interpreter available. If
-# you use pyenv, install one via:
-#   arch -x86_64 pyenv install 3.11.9
-# and then set INTEL_PY accordingly.
+# Prerequisite: Rosetta installed. Uses GitHub's Python interpreter with Rosetta.
 #
 # Usage:
-#   INTEL_PY=$HOME/.pyenv/versions/3.11.9/bin/python3.11 \
 #   packaging/build_mac_x86.sh
 #
 # Result:
@@ -20,14 +16,13 @@ cd "$PROJECT_ROOT"
 # ---------------------------------------------------------------------------
 # Configurable paths
 # ---------------------------------------------------------------------------
-INTEL_PY="${INTEL_PY:-$HOME/.pyenv/versions/3.11.9/bin/python3.11}"
 VENV_X86="venv-x86"
 NAME_X86="blindbase_mac_x86_64"
 DIST_DIR="dist"
 
-if [[ ! -x "$INTEL_PY" ]]; then
-  echo "[!] Intel Python not found/executable at $INTEL_PY" >&2
-  echo "    Install one (e.g. arch -x86_64 pyenv install 3.11.9) and set INTEL_PY." >&2
+# Check if Rosetta is installed
+if ! arch -x86_64 true &>/dev/null; then
+  echo "[!] Rosetta is not installed. Please install Rosetta first." >&2
   exit 1
 fi
 
