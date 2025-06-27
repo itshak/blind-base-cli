@@ -51,10 +51,6 @@ function build_arm() {
          --hidden-import typing_extensions \
          --hidden-import tomli \
          --hidden-import tomlkit \
-         --runtime-hook packaging/pyi_rth_pydantic_purepython.py \
-         --exclude-module pydantic_core \
-         --exclude-module "pydantic_core.*" \
-         --exclude-module "pydantic_core._pydantic_core" \
          blindbase/menu.py
   deactivate
 }
