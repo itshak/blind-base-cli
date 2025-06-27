@@ -50,6 +50,6 @@ function build_x86() {
 }
 
 mkdir -p "$DIST_DIR"
-build_x86 "$INTEL_PY" "$VENV_X86" "$NAME_X86"
+build_x86 "$(which python3)" "$VENV_X86" "$NAME_X86"
 
 echo "[✓] x86_64 binary ready: $DIST_DIR/$NAME_X86"

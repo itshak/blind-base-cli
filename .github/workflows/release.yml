@@ -62,6 +62,12 @@ jobs:
           pip install pyinstaller
       - name: Build x86_64 binary
         run: |
+          # Ensure Rosetta is installed and working
+          if ! arch -x86_64 true &>/dev/null; then
+            echo "[!] Rosetta is not installed. Please install Rosetta first."
+            exit 1
+          fi
+          
           # Run the build script under Rosetta
           arch -x86_64 bash packaging/build_mac_x86.sh
       - name: Upload artefact (x86_64)
