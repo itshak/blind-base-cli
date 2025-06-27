@@ -56,6 +56,14 @@ if 'pydantic_core' not in sys.modules:
     stub.SchemaValidator = _NoCoreStub
     stub.SchemaSerializer = _NoCoreStub
 
+    # Generic fallback so any future symbol access on the parent stub returns a
+    # safe placeholder instead of raising ImportError (covers e.g.
+    # PydanticKnownError, PydanticSerializationError, etc.).
+    def _return_no_core_stub(name):  # pragma: no cover
+        return _NoCoreStub
+
+    stub.__getattr__ = _return_no_core_stub
+
     # Minimal replacement for the custom error class
     class PydanticCustomError(Exception):  # pragma: no cover
         """Placeholder matching the public interface of pydantic_core.PydanticCustomError."""
@@ -86,6 +94,8 @@ if 'pydantic_core' not in sys.modules:
     # `from pydantic_core import _pydantic_core` or `import pydantic_core._pydantic_core`
     # succeed even in pure-python mode.
     core_so_stub = types.ModuleType('pydantic_core._pydantic_core')
+    # Provide the same generic attribute fallback inside the extension submodule.
+    core_so_stub.__getattr__ = _return_no_core_stub
     sys.modules['pydantic_core._pydantic_core'] = core_so_stub
     stub._pydantic_core = core_so_stub
 
