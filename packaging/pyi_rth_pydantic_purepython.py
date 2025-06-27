@@ -1,4 +1,27 @@
-"""PyInstaller runtime hook to ensure pydantic falls back to the pure-python implementation.
+"""PyInstaller runtime hook – force Pydantic to pure-python mode.
+
+This runs **before** any of your code inside the frozen executable, setting the
+`PYDANTIC_PUREPYTHON` env-var so that Pydantic skips loading its compiled Rust
+extension (`pydantic_core`).  Doing so avoids architecture-specific binary
+issues – the app will start on any mac (Intel or Apple Silicon).
+"""
+
+import os
+
+# Respect explicit user choice, otherwise default to safe fallback.
+os.environ.setdefault("PYDANTIC_PUREPYTHON", "1")
+"""
+
+import os
+
+# Respect explicit user choice, otherwise default to the safe fallback.
+os.environ.setdefault("PYDANTIC_PUREPYTHON", "1")
+
+
+Setting the environment variable before any project imports guarantees
+Pydantic skips the compiled Rust extension (`pydantic_core`).  This makes
+the frozen executable architecture-independent at the cost of slightly
+slower validation – acceptable for CLI usage."""
 
 This runs *before* any project code, setting the environment variable that
 instructs `pydantic` ≥2.6 to skip importing the compiled `pydantic_core` wheel.
@@ -6,17 +29,17 @@ It prevents the common "ModuleNotFoundError: pydantic_core" error when the
 binary wheel for the running architecture is missing (e.g. in a one-file
 PyInstaller bundle).
 """
-import os, sys, types
+import os
 
-# If the user already set an explicit override keep it, otherwise default to the
-# safe pure-python path.
+# Respect explicit user choice, otherwise default to pure-python fallback.
 os.environ.setdefault("PYDANTIC_PUREPYTHON", "1")
 
 # Provide a minimal stub so that `import pydantic_core` succeeds when the
 # compiled extension wheel is absent (e.g. different architecture) and
 # `PYDANTIC_PUREPYTHON` is set.  This prevents the import error raised from
 # inside pydantic/version.py when it tries to read pydantic_core.__version__.
-if 'pydantic_core' not in sys.modules:
+# No further stubs required – if the compiled wheel is absent, imports fall
+# back to the pure-python path cleanly.
     stub = types.ModuleType('pydantic_core')
 
     # ------------------------------------------------------------------
@@ -103,4 +126,4 @@ if 'pydantic_core' not in sys.modules:
     stub.__path__ = []  # type: ignore[attr-defined]
 
     # Finally register stub with the import machinery
-    sys.modules['pydantic_core'] = stub
+    

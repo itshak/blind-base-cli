@@ -26,9 +26,9 @@ jobs:
           name: blindbase-pypi
           path: dist/*
 
-  mac:
-    name: Build macOS arm64 & x86_64 binaries
-    runs-on: macos-14 # Apple Silicon runner
+  mac-arm:
+    name: Build macOS arm64 binary
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -39,15 +39,34 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pyinstaller
-      - name: Build both binaries
-        run: python packaging/build_macos.py
-      - name: Upload artefacts
+      - name: Build arm64 binary
+        run: bash packaging/build_mac_arm.sh
+      - name: Upload artefact (arm64)
         uses: actions/upload-artifact@v4
         with:
-          name: blindbase-mac
-          path: |
-            dist/blindbase_mac_arm64
-            dist/blindbase_mac_x86_64
+          name: blindbase-mac-arm64
+          path: dist/blindbase_mac_arm64
+
+  mac-x86:
+    name: Build macOS x86_64 binary
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Build x86_64 binary
+        run: bash packaging/build_mac_x86.sh
+      - name: Upload artefact (x86_64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: blindbase-mac-x86_64
+          path: dist/blindbase_mac_x86_64
 
   windows:
     name: Build Windows executable
@@ -72,7 +91,7 @@ jobs:
 
   publish:
     name: Publish GitHub Release
-    needs: [wheel, mac, windows]
+    needs: [wheel, mac-arm, mac-x86, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write # needed for creating a release and uploading assets
