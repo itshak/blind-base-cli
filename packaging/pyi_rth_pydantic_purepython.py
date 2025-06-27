@@ -12,6 +12,7 @@ This runs **only** inside the frozen executable when the wheel for the current
 architecture is absent.  The hook provides a minimal stub module to prevent
 import errors.
 """
+
 import os
 import sys
 import types
@@ -30,10 +31,28 @@ stub.PydanticUndefinedAny = object()
 stub.PydanticUndefinedTypeAny = type(stub.PydanticUndefinedAny)
 stub.PydanticUndefinedType = type(stub.PydanticUndefined)
 
+# Add error-related classes
+stub.PydanticCustomError = type('PydanticCustomError', (Exception,), {
+    '__init__': lambda self, code, msg_template, ctx: None,
+    'code': property(lambda self: 'custom'),
+    'msg_template': property(lambda self: 'custom error'),
+    'ctx': property(lambda self: {})
+})
+stub.ValidationError = type('ValidationError', (Exception,), {
+    '__init__': lambda self, errors, *, input_value, config, model_name: None,
+    'errors': property(lambda self: []),
+    'input_value': property(lambda self: None),
+    'config': property(lambda self: {}),
+    'model_name': property(lambda self: 'model')
+})
+
 # Add some additional attributes that might be needed
 stub.PydanticValueError = type('PydanticValueError', (ValueError,), {})
 stub.PydanticTypeError = type('PydanticTypeError', (TypeError,), {})
 stub.PydanticRuntimeError = type('PydanticRuntimeError', (RuntimeError,), {})
+stub.PydanticErrorCodes = type('PydanticErrorCodes', (object,), {
+    'PYDANTIC_CUSTOM_ERROR': 'pydantic_custom_error'
+})
 
 # Create a very small sub-module to satisfy `from pydantic_core import core_schema`
 core_schema_module = types.ModuleType('pydantic_core.core_schema')
@@ -45,6 +64,14 @@ stub.core_schema = core_schema_module
 errors_module = types.ModuleType('pydantic_core.errors')
 sys.modules['pydantic_core.errors'] = errors_module
 stub.errors = errors_module
+
+# Add error-related methods to errors module
+errors_module.ValueError = ValueError
+errors_module.TypeError = TypeError
+errors_module.RuntimeError = RuntimeError
+errors_module.PydanticCustomError = stub.PydanticCustomError
+errors_module.ValidationError = stub.ValidationError
+errors_module.PydanticErrorCodes = stub.PydanticErrorCodes
 
 # Provide empty compiled-extension submodule so that relative imports like
 # `from pydantic_core import _pydantic_core` or `import pydantic_core._pydantic_core`
