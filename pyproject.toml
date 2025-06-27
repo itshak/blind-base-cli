@@ -10,6 +10,9 @@ dependencies = [
     "rich>=13",
     "python-chess>=1.999",
     "requests>=2.26",
+    "pydantic>=1.10",
+    "pydantic-settings>=2.0",
+    "tomlkit>=0.12",
 ]
 license = {text = "MIT"}
 classifiers = [
