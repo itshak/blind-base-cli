@@ -12,15 +12,18 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import tkinter  # noqa: F401 -- required for PyInstaller bundling
 from pathlib import Path
 from typing import Any, Dict
 
+import typer
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from tomlkit import dumps, parse, TOMLDocument
 
-CONFIG_PATH = Path.home() / ".config" / "blindbase.toml"
-OLD_JSON_PATH = Path.home() / ".blindbase.json"
+APP_DIR = Path(typer.get_app_dir("blindbase"))
+CONFIG_PATH = APP_DIR / "blindbase.toml"
+OLD_JSON_PATH = Path.home() / ".blindbase.json"  # keep legacy path for migration
 
 
 class EngineSettings(BaseSettings):
@@ -173,8 +176,12 @@ class Settings(BaseSettings):
         _assign("broadcasts", self.broadcasts.model_dump())
         _assign("pgn", self.pgn.model_dump())
 
-        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        CONFIG_PATH.write_text(dumps(doc))
+        try:
+            CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            CONFIG_PATH.write_text(dumps(doc))
+        except (IOError, PermissionError):
+            # Silently ignore errors saving settings, e.g. in a read-only env
+            pass
 
 
 # singleton instance
