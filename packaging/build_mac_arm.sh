@@ -51,6 +51,7 @@ function build_arm() {
          --hidden-import typing_extensions \
          --hidden-import tomli \
          --hidden-import tomlkit \
+         --hidden-import tkinter \
          blindbase/menu.py
   deactivate
 }
