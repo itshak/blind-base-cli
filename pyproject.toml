@@ -59,4 +59,4 @@ blindbase = ["resources/stockfish*"]
 
 [tool.setuptools.packages.find]
 include = ["blindbase*"]
-exclude = ["packaging", "tests*", "blindbase.engine*"]
+exclude = ["packaging", "tests*"]
