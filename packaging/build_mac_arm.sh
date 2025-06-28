@@ -52,6 +52,7 @@ function build_arm() {
          --hidden-import tomli \
          --hidden-import tomlkit \
          --hidden-import tkinter \
+         --hidden-import playsound \
          blindbase/menu.py
   deactivate
 }

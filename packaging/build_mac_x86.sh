@@ -52,6 +52,7 @@ function build_x86() {
          --hidden-import tomli \
          --hidden-import tomlkit \
          --hidden-import tkinter \
+         --hidden-import playsound \
          blindbase/menu.py
   deactivate
 }
