@@ -1,2 +1,2 @@
 # Only distribute source files – exclude large engine binaries
-recursive-exclude blindbase/engine * 
+ 
