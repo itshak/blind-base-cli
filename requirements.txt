@@ -5,6 +5,9 @@ requests>=2.26
 pyinstaller>=6.6.0   # only for building
 pydantic>=1.10
 pydantic-settings>=2.0
+playsound==1.2.2
+pyobjc-core
+pyobjc-framework-Cocoa
 # test/dev
 pytest>=7
 tomlkit>=0.12

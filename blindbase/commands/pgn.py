@@ -11,6 +11,7 @@ from blindbase.ui.views.game import GameView
 from blindbase.core.navigator import GameNavigator
 
 from blindbase.ui.views.training import TrainingView
+from blindbase.sounds_util import play_sound
 __all__ = ["app", "CMD_NAME"]
 
 CMD_NAME = "pgn"
@@ -30,6 +31,7 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     # ------------------------------------------------------------------
     # Load PGN file ------------------------------------------------------
     # ------------------------------------------------------------------
+    play_sound("notify.mp3")
     gm = core_pgn.load_games(file)
     if not gm.games:
         typer.echo("File contains no games", err=True)
@@ -61,16 +63,20 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
         else:
             if panel.selected_index is None:
                 # user cancelled list -> exit command
+                play_sound("click.mp3")
                 raise typer.Exit(code=0)
             sel_idx = panel.selected_index
         assert sel_idx is not None  # mypy hint
         game = gm.games[sel_idx]
+        play_sound("click.mp3")
 
         # ------------------------------------------------------------------
         # Launch interactive GameView --------------------------------------
         # ------------------------------------------------------------------
+        play_sound("game-start.mp3")
         navigator = GameNavigator(game)
         GameView(navigator).run()  # returns when user quits game view
+        play_sound("click.mp3")
 
         # ------------------------------------------------------------------
         # Save changes back to PGN if needed --------------------------------
@@ -89,6 +95,7 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
 @app.command()
 def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     """Opening training mode using PGN main lines."""
+    play_sound("notify.mp3")
     gm = core_pgn.load_games(file)
     if not gm.games:
         typer.echo("File contains no games", err=True)
@@ -98,8 +105,10 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     panel = GameListPanel(gm.games, title=f"Select game to train from {file.name}", allow_edit=False)
     panel.run()
     if panel.selected_index is None:
+        play_sound("click.mp3")
         raise typer.Exit()
     game = gm.games[panel.selected_index]
+    play_sound("click.mp3")
     # choose color
     from rich.prompt import Prompt
     color = Prompt.ask("Train as (w)hite or (b)lack?", choices=["w", "b"], default="w")
@@ -108,6 +117,7 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     try:
         TrainingView(nav, player_is_white).run()
     except TrainingView.ExitRequested:
+        play_sound("click.mp3")
         # back to list instead of quitting whole app
         return train(file)
 

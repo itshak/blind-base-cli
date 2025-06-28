@@ -33,6 +33,7 @@ from blindbase.core.settings import settings
 from blindbase.ui.panels.game_list import GameListPanel
 from blindbase.core.navigator import GameNavigator
 from blindbase.ui.views.game import GameView
+from blindbase.sounds_util import play_sound
 
 __all__ = ["app", "CMD_NAME"]
 
@@ -112,8 +113,10 @@ def _choose_from_table(
     while True:
         choice = input(prompt).strip().lower()
         if choice in {"q", "quit"}:
+            play_sound("click.mp3")
             return None
         if allow_back and choice == "b":
+            play_sound("click.mp3")
             return -1
         if choice in {"h", "help"}:
             cmds = [("<num>", "select item"), ("b", "back") if allow_back else None, ("o", "options / settings"), ("q", "quit list"), ("h", "this help")]
@@ -123,14 +126,18 @@ def _choose_from_table(
             _render_table()
             continue
         if choice == "o":
+            play_sound("click.mp3")
             return -2  # sentinel – caller should open settings and refresh
         if choice.isdigit():
             idx = int(choice) - 1
             if 0 <= idx < len(rows):
+                play_sound("click.mp3")
                 return idx
             typer.echo("Invalid index")
+            play_sound("decline.mp3")
             continue
         _console.print("[red]Invalid input.")
+        play_sound("decline.mp3")
         input("Press Enter to continue…")
         _render_table()
 
@@ -162,6 +169,7 @@ def _download_pgn(url: str) -> str:
 def follow() -> None:  # noqa: C901 complexity ok
     """Interactive broadcast explorer with back-navigation and live settings reload."""
     from datetime import datetime
+    play_sound("notify.mp3")
     while True:  # tournaments loop
         tours = _list_broadcasts()
         rows = [(bc.get("name", "?"),) for bc in tours]
@@ -178,6 +186,7 @@ def follow() -> None:  # noqa: C901 complexity ok
             run_settings_menu()
             continue  # redraw tournaments after settings
         tour = tours[sel]
+        play_sound("notify.mp3")
         while True:  # rounds loop
             tour_id = tour["id"]
             tour_data: dict[str, Any] = _get_json(f"{_API_BASE}/{tour_id}")
@@ -214,6 +223,7 @@ def follow() -> None:  # noqa: C901 complexity ok
             if rsel == -1:
                 break  # back to tournaments
             rnd = rounds[rsel]
+            play_sound("notify.mp3")
             # ------------------------------------------------------------------
             # Download PGN
             # ------------------------------------------------------------------
@@ -253,8 +263,11 @@ def follow() -> None:  # noqa: C901 complexity ok
                 )
                 panel.run()
                 if panel.selected_index is None:
+                    play_sound("click.mp3")
                     break  # back to rounds
                 game = games[panel.selected_index]
+                play_sound("game-start.mp3")
                 navigator = GameNavigator(game)
                 GameView(navigator).run()
+                play_sound("click.mp3")
                 # after game view returns, go back to games list

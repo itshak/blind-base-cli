@@ -21,6 +21,7 @@ from rich.table import Table
 from blindbase.ui.utils import show_help_panel
 from rich.panel import Panel
 from rich.text import Text
+from blindbase.sounds_util import play_sound
 
 console = Console()
 
@@ -98,6 +99,7 @@ def _collect_categories() -> list[str]:
     return [fld for fld in settings.model_dump().keys()]
 
 def run_settings_menu() -> None:
+    play_sound("notify.mp3")
     changed = False
     current_category: str | None = None
     while True:
@@ -114,6 +116,7 @@ def run_settings_menu() -> None:
             console.print(Panel(tbl, title="Settings Categories", border_style="green"))
             choice = input("Command (h for help): ").strip().lower()
             if choice == "q":
+                play_sound("click.mp3")
                 if changed and input("Save changes before quitting? (Y/n): ").strip().lower() in {"", "y", "yes"}:
                     settings.save()
                 break
@@ -129,10 +132,13 @@ def run_settings_menu() -> None:
                 idx = int(choice) - 1
                 if 0 <= idx < len(cats):
                     current_category = cats[idx]
+                    play_sound("click.mp3")
+                else:
+                    play_sound("decline.mp3")
                 continue
+            play_sound("decline.mp3")
             continue
-        # ------------ leaf submenu -------------
-        clear_screen_and_prepare_for_new_content()
+        # ------------ leaf submenu -            clear_screen_and_prepare_for_new_content()
         leafs = [ (k, v) for k, v in _collect_leaf_settings() if k.startswith(f"{current_category}.") ]
         # Build rich table grouped by section
         tbl = Table(show_header=True, header_style="bold magenta")
@@ -146,9 +152,11 @@ def run_settings_menu() -> None:
         console.print(Panel(tbl, title=f"{_pretty_name(current_category)} Settings", border_style="green"))
         choice = input("Command (h for help): ").strip().lower()
         if choice == "b":
+            play_sound("click.mp3")
             current_category = None
             continue
         if choice == "q":
+            play_sound("click.mp3")
             if changed:
                 if input("Save changes before quitting? (Y/n): ").strip().lower() in {"", "y", "yes"}:
                     settings.save()
@@ -164,6 +172,7 @@ def run_settings_menu() -> None:
             input("Press Enter to continue…")
             continue
         if choice == "s":
+            play_sound("click.mp3")
             if changed:
                 settings.save()
                 print("Settings saved.")
@@ -172,6 +181,7 @@ def run_settings_menu() -> None:
         if choice.isdigit():
             idx = int(choice) - 1
             if 0 <= idx < len(leafs):
+                play_sound("click.mp3")
                 key, val = leafs[idx]
                 full_key = key
                 short_key = key[len(current_category)+1:]
@@ -186,8 +196,9 @@ def run_settings_menu() -> None:
                             changed = True
                     else:
                         input("Invalid option. Press Enter…")
+                        play_sound("decline.mp3")
                 elif isinstance(val, bool):
-                    console.print(Text(f"{label.lower()}?", style="bold"))
+                    console.print(Text(f"Choose {label.lower()}:", style="bold"))
                     console.print(Panel("1. Yes\n2. No", title="Options", border_style="blue"))
                     sel = input("Select number: ").strip()
                     if sel in {"1", "2"}:
@@ -195,6 +206,7 @@ def run_settings_menu() -> None:
                             changed = True
                     else:
                         input("Invalid option. Press Enter…")
+                        play_sound("decline.mp3")
                 else:
                     new_val_str = input(f"Enter new value for {label} (current {val}): ").strip()
                     if new_val_str:
@@ -202,6 +214,8 @@ def run_settings_menu() -> None:
                             changed = True
             else:
                 input("Invalid number. Press Enter…")
+                play_sound("decline.mp3")
 
         else:
             input("Unknown command. Press Enter…")
+            play_sound("decline.mp3")

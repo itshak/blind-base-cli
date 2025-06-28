@@ -24,6 +24,7 @@ from blindbase.core.settings import settings
 from blindbase.commands import pgn as pgn_cmd
 from blindbase.commands import broadcasts as broadcasts_cmd
 from blindbase.ui.panels.settings_menu import run_settings_menu
+from blindbase.sounds_util import play_sound
 
 from rich.console import Console
 from rich.panel import Panel
@@ -52,6 +53,7 @@ def _select_pgn_file() -> Optional[Path]:  # noqa: C901 complexity okay
             path = Path(inp).expanduser()
             if not path.is_file():
                 print("File not found – try again.")
+                play_sound("decline.mp3")
                 continue
             return path
         # --- directory listing branch -----------------------------------
@@ -63,6 +65,7 @@ def _select_pgn_file() -> Optional[Path]:  # noqa: C901 complexity okay
         if not files:
             print(f"No .pgn files found in {pgn_dir}.")
             return None
+        play_sound("notify.mp3")
         _console.clear()
         tbl = Table(show_header=False, box=None, padding=(0,1))
         tbl.add_column(justify="right", style="cyan")
@@ -72,14 +75,18 @@ def _select_pgn_file() -> Optional[Path]:  # noqa: C901 complexity okay
         _console.print(Panel(tbl, title=f"PGN files in {pgn_dir}", border_style="green"))
         choice = input("Select number (b to back): ").strip().lower()
         if choice == "b":
+            play_sound("click.mp3")
             return None
         if not choice.isdigit():
             print("Invalid input – please enter a number.")
+            play_sound("decline.mp3")
             continue
         idx = int(choice) - 1
         if 0 <= idx < len(files):
+            play_sound("click.mp3")
             return files[idx]
         print("Number out of range.")
+        play_sound("decline.mp3")
 
 
 # ---------------------------------------------------------------------------
@@ -112,6 +119,7 @@ def _run_main_menu() -> None:
         _render_main_menu()
         choice = input("Select option: ").strip().lower()
         if choice == "q":
+            play_sound("click.mp3")
             break
         if choice == "a":
             _show_about()
@@ -125,10 +133,12 @@ def _run_main_menu() -> None:
         if choice in {"1", "2"}:
             pgn_path = _select_pgn_file()
             if pgn_path is None:
+                play_sound("click.mp3")
                 continue
             _launch_pgn(choice, pgn_path)
             continue
         _console.print("[red]Invalid choice.[/red]")
+        play_sound("decline.mp3")
         input("Press Enter to continue…")
 
 
@@ -138,6 +148,7 @@ def _run_main_menu() -> None:
 
 def _launch_pgn(mode_choice: str, pgn_path: Path) -> None:
     """Run PGN viewer or trainer safely, returning to menu on exit."""
+    play_sound("notify.mp3")
     import click
     func = pgn_cmd.show if mode_choice == "1" else pgn_cmd.train
     try:
@@ -150,6 +161,7 @@ def _launch_pgn(mode_choice: str, pgn_path: Path) -> None:
 
 
 def _launch_broadcasts() -> None:
+    play_sound("notify.mp3")
     import click
     try:
         broadcasts_cmd.follow()
@@ -159,6 +171,7 @@ def _launch_broadcasts() -> None:
 
 
 def _show_about() -> None:
+    play_sound("notify.mp3")
     panel = Panel(
         Text(
             (

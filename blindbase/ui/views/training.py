@@ -22,6 +22,7 @@ from blindbase.utils.board_desc import (
     describe_piece_locations,
     describe_file_or_rank,
 )
+from blindbase.sounds_util import play_sound
 
 __all__ = ["TrainingView"]
 
@@ -126,15 +127,18 @@ class TrainingView:
                 move = self._parse_move_input(cmd)
             except ValueError:
                 self._console.print("[red]Invalid move format.[/red]")
+                play_sound("illegal.mp3")
                 attempts += 1
                 continue
             if move == expected_move:
                 san_std = self.nav.get_current_board().san(move)
                 self.nav.make_move(san_std)
                 self.correct_guesses += 1
+                play_sound("correct.mp3")
                 return
             else:
                 self._console.print("[red]Incorrect – try again.[/red]")
+                play_sound("incorrect.mp3")
                 attempts += 1
         # failed 3 times – show correct move and push it
         self.failed_guesses += 1
@@ -163,6 +167,7 @@ class TrainingView:
         san_disp = move_to_str(self.nav.get_current_board(), mv, settings.ui.move_notation)
         san_std = self.nav.get_current_board().san(mv)
         self._console.print(Text(f"Opponent will play: {san_disp}", style="cyan"))
+        play_sound("move-opponent.mp3")
         while True:
             cmd = self._console.input("Enter to continue (h for help): ").strip()
             if cmd == "":
@@ -277,6 +282,7 @@ class TrainingView:
         self._console.input("Press Enter to continue…")
 
     def _show_summary(self) -> bool:
+        play_sound("achievement.mp3")
         total = self.correct_guesses + self.failed_guesses
         pct = (self.correct_guesses / total) * 100 if total else 0
         tbl = Table(show_header=False, box=None, pad_edge=False)

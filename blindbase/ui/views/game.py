@@ -22,6 +22,7 @@ from blindbase.core.navigator import GameNavigator
 from blindbase.ui.board import render_board
 from blindbase.core.settings import settings
 from blindbase.utils.move_format import move_to_str
+from blindbase.sounds_util import play_sound
 
 __all__ = ["GameView"]
 
@@ -74,30 +75,37 @@ class GameView:
 
     def _handle_command(self, cmd: str) -> bool:
         if cmd.lower() in {"q", "quit"}:
+            play_sound("game-end.mp3")
             raise self.ExitRequested
         if cmd.lower() in {"h", "help"}:
+            play_sound("click.mp3")
             self._show_help()
             return False
         if cmd.lower() == "f":
+            play_sound("click.mp3")
             self._flip = not self._flip
             return False
         if cmd.lower() == "b":
             self.nav.go_back()
             return False
         if cmd.lower() == "t":
+            play_sound("notify.mp3")
             from blindbase.ui.panels.opening_tree import OpeningTreePanel
             panel = OpeningTreePanel(self.nav.get_current_board())
             panel.run()
             mv = getattr(panel, "selected_move", None)
             if mv is not None:
-                # apply to navigator
                 self.nav.make_move(self.nav.get_current_board().san(mv))
+            play_sound("click.mp3")
             return False
         if cmd.lower() == "o":
+            play_sound("notify.mp3")
             from blindbase.ui.panels.settings_menu import run_settings_menu
             run_settings_menu()
+            play_sound("click.mp3")
             return False
         if cmd.lower() == "a":
+            play_sound("notify.mp3")
             from blindbase.core.settings import settings
             from blindbase.ui.panels.analysis import AnalysisPanel
             panel = AnalysisPanel(self.nav.get_current_board(), lines=settings.engine.lines)
@@ -105,8 +113,10 @@ class GameView:
             mv = getattr(panel, "selected_move", None)
             if mv is not None:
                 self.nav.make_move(self.nav.get_current_board().san(mv))
+            play_sound("click.mp3")
             return False
         if cmd.lower() == "c":
+            play_sound("click.mp3")
             from blindbase.core.engine import Engine, EngineError
             try:
                 from blindbase.core.engine import score_to_str
@@ -118,34 +128,42 @@ class GameView:
             input("Press Enter to continue…")
             return False
         if cmd.lower() == "r":
+            play_sound("click.mp3")
             self._read_board_aloud()
             return False
         if cmd == "p":
+            play_sound("click.mp3")
             piece = input("Enter piece (KQRBNP or A for all, case controls colour): ").strip()
             self._list_piece_squares(piece)
             return False
         if cmd.startswith("p "):
+            play_sound("click.mp3")
             piece = cmd[2:].strip()
             self._list_piece_squares(piece)
             return False
         if cmd == "s":
+            play_sound("click.mp3")
             spec = input("Enter file (a-h) or rank (1-8): ").strip()
             self._describe_file_or_rank(spec)
             return False
         if cmd.startswith("s "):
+            play_sound("click.mp3")
             spec = cmd[2:].strip()
             self._describe_file_or_rank(spec)
             return False
         if cmd.startswith("d "):
+            play_sound("click.mp3")
             try:
                 num = int(cmd.split()[1])
                 success, msg = self.nav.delete_variation(num)
                 print(msg)
             except ValueError:
                 print("Invalid variation number.")
+                play_sound("decline.mp3")
             input("Press Enter to continue…")
             return False
         if cmd.isdigit():
+            play_sound("move-self.mp3")
             idx = int(cmd)
             self.nav.make_move(cmd)
             return False
@@ -153,8 +171,9 @@ class GameView:
         ok, _ = self.nav.make_move(cmd)
         if not ok:
             print("Invalid command or move.")
+            play_sound("decline.mp3")
             input("Press Enter to continue…")
-        return False
+            return False
 
     # ------------------------------------------------------------------
     # Rendering helpers
