@@ -12,7 +12,7 @@ frozen executable** when the wheel for the current architecture is absent.
 
 import os
 
-__version__ = "0.11.1"
+__version__ = "0.11.2"
 
 # Legacy imports (SettingsManager, GameManager, BroadcastManager, GameNavigator)
 # were removed in v0.10.21 together with the monolithic CLI.  Their functionality

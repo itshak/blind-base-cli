@@ -40,7 +40,7 @@ function build_arm() {
   fi
   source "$VENV/bin/activate"
   pip install --upgrade pip >/dev/null
-  pip install . pyinstaller >/dev/null
+  pip install . pyinstaller playsound >/dev/null
   echo "[+] Building $OUT_NAME (arm64)"
   python -m PyInstaller --clean --onefile --target-arch arm64 \
          --name "$OUT_NAME" \

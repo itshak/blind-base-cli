@@ -40,7 +40,7 @@ function build_x86() {
   fi
   source "$VENV/bin/activate"
   pip install --upgrade pip >/dev/null
-  pip install . pyinstaller >/dev/null
+  pip install . pyinstaller playsound >/dev/null
   echo "[+] Building $OUT_NAME (x86_64)"
   arch -x86_64 python -m PyInstaller --clean --onefile --target-arch x86_64 \
          --name "$OUT_NAME" \
