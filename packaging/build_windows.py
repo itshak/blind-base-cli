@@ -19,10 +19,9 @@ DIST_DIR = PROJECT_ROOT / "dist"
 NAME = "blindbase"
 
 PYINSTALLER_CMD = (
-    f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} "
+    f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} --additional-hooks-dir packaging/pyinstaller_hooks "
     "--add-binary blindbase/engine/win/stockfish.exe;engine/win "
-    "--add-data blindbase/sounds;blindbase/sounds "
-    "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import tomlkit --hidden-import playsound "
+    "--add-data blindbase/sounds;blindbase/sounds "     "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import tomlkit --hidden-import playsound "
     "blindbase/menu.py"
 )
 

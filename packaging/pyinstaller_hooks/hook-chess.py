@@ -1,0 +1,1 @@
+hiddenimports = ['chess.engine', 'chess.pgn']
