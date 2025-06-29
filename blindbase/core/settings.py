@@ -169,12 +169,12 @@ class Settings(BaseSettings):
                 else:
                     doc[section][k] = v
 
-        _assign("engine", self.engine.model_dump())
-        _assign("opening_tree", self.opening_tree.model_dump())
-        _assign("ui", self.ui.model_dump())
-        _assign("opening_training", self.opening_training.model_dump())
-        _assign("broadcasts", self.broadcasts.model_dump())
-        _assign("pgn", self.pgn.model_dump())
+        _assign("engine", self.engine.model_dump(exclude_none=True))
+        _assign("opening_tree", self.opening_tree.model_dump(exclude_none=True))
+        _assign("ui", self.ui.model_dump(exclude_none=True))
+        _assign("opening_training", self.opening_training.model_dump(exclude_none=True))
+        _assign("broadcasts", self.broadcasts.model_dump(exclude_none=True))
+        _assign("pgn", self.pgn.model_dump(exclude_none=True))
 
         try:
             CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
