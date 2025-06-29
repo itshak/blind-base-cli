@@ -51,7 +51,7 @@ def render_board(board: chess.Board, use_unicode: bool = True, *, flipped: bool 
 
             is_dark_square = (file + rank) % 2 == 1
             
-            current_theme = settings.ui.board_theme
+            current_theme = BOARD_THEMES[settings.ui.board_theme]
             light_col = current_theme.light_square_color
             dark_col = current_theme.dark_square_color
 
