@@ -1,6 +1,6 @@
 [project]
 name = "blindbase"
-version = "0.11.10"
+version = "0.11.11"
 description = "Accessible CLI chess study tool with Stockfish analysis and  Lichess integration."
 authors = [{name="Alexey Streltsov", email="iitshak@gmail.com"}]
 readme = "README.md"
