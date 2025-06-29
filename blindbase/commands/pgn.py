@@ -12,6 +12,7 @@ from blindbase.core.navigator import GameNavigator
 
 from blindbase.ui.views.training import TrainingView
 from blindbase.sounds_util import play_sound
+from blindbase.ui.utils import clear_screen_and_prepare_for_new_content
 __all__ = ["app", "CMD_NAME"]
 
 CMD_NAME = "pgn"
@@ -43,6 +44,7 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     from blindbase.ui.panels.game_list import GameListPanel  # local import to avoid cycles
 
     while True:
+        clear_screen_and_prepare_for_new_content()
         panel = GameListPanel(gm.games, title=f"Games in {file.name}")
         panel.run()
         # Handle deletion

@@ -23,6 +23,7 @@ from blindbase.ui.board import render_board
 from blindbase.core.settings import settings
 from blindbase.utils.move_format import move_to_str
 from blindbase.sounds_util import play_sound
+from blindbase.ui.utils import clear_screen_and_prepare_for_new_content
 
 __all__ = ["GameView"]
 
@@ -202,7 +203,7 @@ class GameView:
         console = self._console
         # sync clocks before rendering
         self._sync_clocks()
-        console.clear()
+        clear_screen_and_prepare_for_new_content()
         # ------------------------------------------------------------------
         # Header info -------------------------------------------------------
         # ------------------------------------------------------------------

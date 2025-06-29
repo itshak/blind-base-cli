@@ -25,6 +25,7 @@ from blindbase.commands import pgn as pgn_cmd
 from blindbase.commands import broadcasts as broadcasts_cmd
 from blindbase.ui.panels.settings_menu import run_settings_menu
 from blindbase.sounds_util import play_sound
+from blindbase.ui.utils import clear_screen_and_prepare_for_new_content
 
 from rich.console import Console
 from rich.panel import Panel
@@ -66,7 +67,7 @@ def _select_pgn_file() -> Optional[Path]:  # noqa: C901 complexity okay
             print(f"No .pgn files found in {pgn_dir}.")
             return None
         play_sound("notify.mp3")
-        _console.clear()
+        clear_screen_and_prepare_for_new_content()
         tbl = Table(show_header=False, box=None, padding=(0,1))
         tbl.add_column(justify="right", style="cyan")
         tbl.add_column()
@@ -111,7 +112,7 @@ def _render_main_menu() -> None:
     for key, label in opts:
         menu_tbl.add_row(key + ")", label)
     panel = Panel(menu_tbl, title="BlindBase", border_style="green")
-    _console.clear()
+    clear_screen_and_prepare_for_new_content()
     _console.print(panel)
 
 def _run_main_menu() -> None:
@@ -185,7 +186,7 @@ def _show_about() -> None:
         title="About",
         border_style="blue",
     )
-    _console.clear()
+    clear_screen_and_prepare_for_new_content()
     _console.print(panel)
     input("Press Enter to return…")
 
