@@ -13,16 +13,20 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+import site
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DIST_DIR = PROJECT_ROOT / "dist"
 NAME = "blindbase"
 
+def get_site_packages_path():
+    return site.getsitepackages()[0]
+
 PYINSTALLER_CMD = (
     f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} "
     "--add-binary blindbase/engine/win/stockfish.exe;engine/win "
     "--add-data blindbase/sounds;blindbase/sounds "
-    "--add-data C:\Python\Python39\Lib\site-packages\chess;chess " # IMPORTANT: Replace with actual path to chess module on Windows build machine
+    f"--add-data {get_site_packages_path()}/chess;chess "
     "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import tomlkit --hidden-import playsound "
     "blindbase/menu.py"
 )
