@@ -69,6 +69,8 @@ class GameView:
                     continue
         except self.ExitRequested:
             return
+        except KeyboardInterrupt:
+            return
 
     # ------------------------------------------------------------------
     # Command dispatch
@@ -181,22 +183,43 @@ class GameView:
     # ------------------------------------------------------------------
 
     def _sync_clocks(self) -> None:
-        """Parse current node comment for [%clk ...] and update stored clocks."""
-        node = self.nav.current_node
-        if not node.comment:
-            return
+        """Parse comments of the current and parent nodes to show both clocks."""
         import re
-        m = re.search(r"\[%clk\s+([0-9:]+)\]", node.comment)
-        if not m:
-            return
-        tstr = m.group(1)
-        # node.move is the move that *reached* this node
-        board = self.nav.get_current_board()
-        # side that just moved is opposite to side to move now
-        if board.turn == chess.WHITE:
-            self.black_clock = tstr
-        else:
-            self.white_clock = tstr
+        import chess.pgn
+
+        # We reset the clocks each time to avoid showing stale data
+        self.white_clock = None
+        self.black_clock = None
+
+        def _extract_and_set_clock(node: chess.pgn.GameNode | None):
+            """Helper to extract clock from a single node and set the correct color."""
+            if not node or not node.comment:
+                return
+
+            match = re.search(r"\[%clk\s+([0-9:.]+)\]", node.comment)
+            if not match:
+                return
+
+            time_str = match.group(1)
+            
+            # The move is in `node.move`. The board *before* the move is `node.parent.board()`.
+            # The color of the player who moved is `node.parent.board().turn`.
+            if not node.parent:
+                return
+
+            mover_color = node.parent.board().turn
+            if mover_color == chess.WHITE:
+                if self.white_clock is None:  # Prioritize the most recent clock info
+                    self.white_clock = time_str
+            else:
+                if self.black_clock is None:
+                    self.black_clock = time_str
+
+        # Check current node first, then its parent.
+        # This ensures we get the most up-to-date clock for each player.
+        _extract_and_set_clock(self.nav.current_node)
+        if self.nav.current_node:
+            _extract_and_set_clock(self.nav.current_node.parent)
 
 
     def _render(self) -> None:

@@ -90,6 +90,11 @@ class GameNavigator:  # minimal stub for CLI help/PGN view
         self._play_move_sound()
         return True, "added variation"
 
+    def go_to_end(self) -> None:
+        """Navigates to the end of the main variation."""
+        while self._node.variations:
+            self._node = self._node.variations[0]
+
     def go_back(self) -> bool:
         """Return True if we successfully moved back a ply."""
         if self._node.parent is not None:
@@ -119,5 +124,31 @@ class GameNavigator:  # minimal stub for CLI help/PGN view
             self.has_changes = True
             return True, "variation deleted"
         return False, "index out of range"
+
+    def update_from_stream(self, new_game: chess.pgn.Game):
+        """Update the game with a new version from the stream."""
+        # Find the current node in the new game tree
+        new_node = new_game
+        path_to_current = []
+        node = self._node
+        while node.parent:
+            path_to_current.insert(0, node.move)
+            node = node.parent
+
+        try:
+            for move in path_to_current:
+                new_node = new_node.variation(move)
+        except KeyError:
+            # The current path doesn't exist in the new game, so stay at the root
+            new_node = new_game
+
+        was_at_end = self._node.is_end()
+        self.working_game = new_game
+        self._root = new_game
+        self._node = new_node
+
+        if was_at_end and not self._node.is_end():
+            self._node = self._node.variations[0]
+            self._play_move_sound()
 
 __all__ = ["GameNavigator"]

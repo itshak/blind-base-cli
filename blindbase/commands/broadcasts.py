@@ -34,6 +34,7 @@ from blindbase.ui.panels.game_list import GameListPanel
 from blindbase.core.navigator import GameNavigator
 from blindbase.ui.views.game import GameView
 from blindbase.sounds_util import play_sound
+from blindbase.core.stream import GameStreamer
 
 __all__ = ["app", "CMD_NAME"]
 
@@ -268,6 +269,24 @@ def follow() -> None:  # noqa: C901 complexity ok
                 game = games[panel.selected_index]
                 play_sound("game-start.mp3")
                 navigator = GameNavigator(game)
+
+                is_live = rnd.get("ongoing", False) and game.headers.get("Result", "*") == "*"
+
+                if is_live:
+                    navigator.go_to_end()
+
+                streamer = None
+                if is_live:
+                    round_id = rnd["id"]
+                    game_id = game.headers.get("LichessID")
+                    if game_id:
+                        streamer = GameStreamer(round_id, game_id, navigator.update_from_stream)
+                        streamer.start()
+
                 GameView(navigator).run()
+
+                if streamer:
+                    streamer.stop()
+                    streamer.join()
                 play_sound("click.mp3")
                 # after game view returns, go back to games list
