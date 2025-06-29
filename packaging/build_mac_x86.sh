@@ -39,12 +39,13 @@ function build_x86() {
     arch -x86_64 "$PYBIN" -m venv "$VENV"
   fi
   source "$VENV/bin/activate"
-  pip install --upgrade pip >/dev/null
-  pip install . pyinstaller playsound >/dev/null
+  pip install --upgrade pip setuptools wheel >/dev/null
+  pip install . pyinstaller playsound pyobjc >/dev/null
   echo "[+] Building $OUT_NAME (x86_64)"
   arch -x86_64 python -m PyInstaller --clean --onefile --target-arch x86_64 \
          --name "$OUT_NAME" \
          --add-binary "blindbase/engine/mac/stockfish_x86:engine/mac" \
+         --add-data "blindbase/sounds:blindbase/sounds" \
          --hidden-import pydantic \
          --hidden-import pydantic_core \
          --hidden-import pydantic_settings \

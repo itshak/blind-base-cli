@@ -21,7 +21,7 @@ cd "$PROJECT_ROOT"
 # ---------------------------------------------------------------------------
 # Configurable paths – override via env vars if needed
 # ---------------------------------------------------------------------------
-ARM_PY="${ARM_PY:-python3}"
+ARM_PY="${ARM_PY:-python3.11}"
 VENV_ARM="venv-arm"
 NAME_ARM="blindbase_mac_arm64"
 DIST_DIR="dist"
@@ -39,19 +39,19 @@ function build_arm() {
     $PYBIN -m venv "$VENV"
   fi
   source "$VENV/bin/activate"
-  pip install --upgrade pip >/dev/null
-  pip install . pyinstaller playsound >/dev/null
+  pip install --upgrade pip setuptools wheel >/dev/null
+  pip install . pyinstaller playsound pyobjc >/dev/null
   echo "[+] Building $OUT_NAME (arm64)"
   python -m PyInstaller --clean --onefile --target-arch arm64 \
          --name "$OUT_NAME" \
          --add-binary "blindbase/engine/mac/stockfish:engine/mac" \
+         --add-data "blindbase/sounds:blindbase/sounds" \
          --hidden-import pydantic \
          --hidden-import pydantic_core \
          --hidden-import pydantic_settings \
          --hidden-import typing_extensions \
          --hidden-import tomli \
          --hidden-import tomlkit \
-         --hidden-import tkinter \
          --hidden-import playsound \
          blindbase/menu.py
   deactivate
