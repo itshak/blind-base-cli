@@ -33,6 +33,7 @@ _DESCRIPTIONS = {
     "engine.lines": "Number of engine lines to show",
     "opening_tree.lichess_moves": "Moves to fetch from Lichess",
     "ui.theme": "Colour theme",
+    "ui.board_theme": "Board theme",
 }
 
 def _pretty_name(key: str) -> str:
@@ -46,6 +47,7 @@ def _pretty_name(key: str) -> str:
 # Enumerated option lists
 _ENUM_OPTIONS: dict[str, list[Any]] = {
     "ui.move_notation": ["san", "uci", "anna", "nato", "literate"],
+    "ui.board_theme": ["default", "high_contrast_light", "high_contrast_dark", "colorblind_red_green"],
 }
 
 

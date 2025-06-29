@@ -15,6 +15,9 @@ def get_console() -> Console:
     return _console
 
 
+from blindbase.core.settings import settings
+
+
 UNICODE_PIECES = {
     chess.PAWN: {True: "♙", False: "♟"},
     chess.ROOK: {True: "♖", False: "♜"},
@@ -47,17 +50,20 @@ def render_board(board: chess.Board, use_unicode: bool = True, *, flipped: bool 
                 glyph = " "
 
             is_dark_square = (file + rank) % 2 == 1
-            # Fixed light/dark colours regardless of orientation so flipping board does not invert colours
-            light_col, dark_col = "#769656", "#EEEED2"
+            
+            current_theme = settings.ui.board_theme
+            light_col = current_theme.light_square_color
+            dark_col = current_theme.dark_square_color
+
             bg = dark_col if is_dark_square else light_col
             if piece:
                 if piece.color == chess.WHITE:
-                    fg_style = "bold white"
+                    fg_style = current_theme.piece_color_white
                 else:
-                    fg_style = "black"
+                    fg_style = current_theme.piece_color_black
             else:
                 # adjust text colour for reversed background choice
-                fg_style = "white" if bg == "#769656" else "black"
+                fg_style = "white" if bg == dark_col else "black"
 
             style = f"{fg_style} on {bg}"
             line.append(f"{glyph} ", style=style)   # glyph plus trailing space

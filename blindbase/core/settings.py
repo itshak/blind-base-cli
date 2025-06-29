@@ -49,8 +49,46 @@ class UISettings(BaseSettings):
     show_board: bool = Field(True, description="Display ASCII board; if False only text")
     games_per_page: int = Field(10, description="Pagination size for games list")
     move_notation: Literal["san", "uci", "nato", "anna"] = Field("san", description="Move notation style")
+    board_theme: str = Field("default", description="Board theme (default, high_contrast_light, high_contrast_dark, colorblind_red_green)")
 
     model_config = SettingsConfigDict(extra="ignore")
+
+
+class BoardTheme(BaseSettings):
+    light_square_color: str
+    dark_square_color: str
+    piece_color_white: str
+    piece_color_black: str
+
+    model_config = SettingsConfigDict(extra="ignore")
+
+# Predefined board themes
+BOARD_THEMES = {
+    "default": BoardTheme(
+        light_square_color="#EEEED2",
+        dark_square_color="#769656",
+        piece_color_white="bold white",
+        piece_color_black="black",
+    ),
+    "high_contrast_light": BoardTheme(
+        light_square_color="#FFFFFF",
+        dark_square_color="#000000",
+        piece_color_white="bold black",
+        piece_color_black="bold white",
+    ),
+    "high_contrast_dark": BoardTheme(
+        light_square_color="#000000",
+        dark_square_color="#FFFFFF",
+        piece_color_white="bold white",
+        piece_color_black="bold black",
+    ),
+    "colorblind_red_green": BoardTheme(
+        light_square_color="#F0E68C",  # Khaki
+        dark_square_color="#8B0000",  # DarkRed
+        piece_color_white="bold white",
+        piece_color_black="bold black",
+    ),
+}
 
 
 class BroadcastSettings(BaseSettings):
