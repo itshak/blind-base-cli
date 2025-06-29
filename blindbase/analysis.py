@@ -5,22 +5,8 @@ import sys
 import time
 from typing import List
 
-try:
-    import chess
-    import chess.engine
-    CHESS_AVAILABLE = True
-except ImportError:
-    CHESS_AVAILABLE = False
-    # Define dummy objects or functions if necessary to prevent NameError
-    class DummyEngine:
-        def __init__(self):
-            pass
-        def analysis(self, *args, **kwargs):
-            raise NotImplementedError("Chess engine not available.")
-    class DummyBoard:
-        def __init__(self):
-            pass
-    chess = type('module', (object,), {'engine': DummyEngine(), 'Board': DummyBoard()})
+import chess
+import chess.engine
 
 
 __all__ = [
