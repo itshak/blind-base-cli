@@ -26,7 +26,7 @@ PYINSTALLER_CMD = (
     f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} "
     "--add-binary blindbase/engine/win/stockfish.exe;engine/win "
     "--add-data blindbase/sounds;blindbase/sounds "
-    CHESS_MODULE_PATH = os.path.join(get_site_packages_path(), "Lib", "site-packages", "chess") "
+    CHESS_MODULE_PATH = os.path.join(get_site_packages_path(), "Lib", "site-packages", "chess")
     "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import tomlkit --hidden-import playsound "
     "blindbase/menu.py"
 )
