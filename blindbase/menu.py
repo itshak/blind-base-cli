@@ -141,6 +141,7 @@ def _run_main_menu() -> None:
         _console.print("[red]Invalid choice.[/red]")
         play_sound("decline.mp3")
         input("Press Enter to continue…")
+    sys.exit(0)
 
 
 # ---------------------------------------------------------------------------
