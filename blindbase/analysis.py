@@ -8,13 +8,44 @@ from typing import List
 import chess
 import chess.engine
 
+from blindbase.core.engine import Engine
+from blindbase.core.settings import settings
+
 
 __all__ = [
     "get_analysis_block_height",
     "clear_analysis_block_dynamic",
     "print_analysis_refined",
     "analysis_thread_refined",
+    "select_move_candidates",
 ]
+
+
+def select_move_candidates(engine: chess.engine.SimpleEngine, board: chess.Board, num_lines: int) -> tuple[list[tuple[chess.Move, chess.engine.Score]], int]:
+    """
+    Selects move candidates from the engine analysis.
+
+    Args:
+        engine: The chess engine.
+        board: The current board state.
+        num_lines: The number of lines to analyze.
+
+    Returns:
+        A tuple containing:
+        - A list of (move, score) tuples, sorted by score.
+        - The depth of the analysis.
+    """
+    infos = engine.analyse(board, chess.engine.Limit(depth=settings.engine.eval_depth), multipv=num_lines)
+    
+    move_scores = []
+    depth = 0
+    for info in infos:
+        if "pv" in info and info.get("pv"):
+            move_scores.append((info["pv"][0], info["score"]))
+        if info.get("depth", 0) > depth:
+            depth = info.get("depth", 0)
+
+    return move_scores, depth
 
 
 # ----------------------------------------------------------------------
@@ -158,4 +189,4 @@ def analysis_thread_refined(engine: chess.engine.SimpleEngine, board: chess.Boar
         sys.stdout.write(f"\033[2K{error_message}\n")
         for _ in range(get_analysis_block_height(settings_manager) - 1):
             sys.stdout.write("\033[2K\n")
-        sys.stdout.flush() 
+        sys.stdout.flush()

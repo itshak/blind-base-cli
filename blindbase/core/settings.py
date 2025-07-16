@@ -29,6 +29,7 @@ OLD_JSON_PATH = Path.home() / ".blindbase.json"  # keep legacy path for migratio
 class EngineSettings(BaseSettings):
     lines: int = Field(3, description="Number of PV lines to show")
     path: str | None = Field(None, description="Override path to Stockfish executable")
+    eval_depth: int = Field(30, description="Evaluation depth for move candidates")
 
     # Use a dedicated env_prefix so that the OS PATH environment variable
     # does not inadvertently populate the `path` field.

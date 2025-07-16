@@ -120,15 +120,39 @@ class GameView:
             return False
         if cmd.lower() == "c":
             play_sound("click.mp3")
-            from blindbase.core.engine import Engine, EngineError
+            from blindbase.core.engine import Engine, EngineError, score_to_str
+            from blindbase.analysis import select_move_candidates
+            from blindbase.core.settings import settings
+            from rich.table import Table
+
+            self._console.print("Evaluating...")
             try:
-                from blindbase.core.engine import score_to_str
-                score = Engine.evaluate(self.nav.get_current_board())
-                depth = 15  # static for now; could track last depth
-                print(f"Engine score: {score_to_str(score)}  (depth {depth})")
+                engine = Engine.get()
+                moves, depth = select_move_candidates(engine, self.nav.get_current_board(), settings.engine.lines)
+                
+                # Clear only the "Evaluating..." line
+                self._console.print("\033[1A\033[2K", end="")
+
+                table = Table(title=f"Engine Analysis (Depth: {depth})")
+                table.add_column("N", justify="right", style="cyan")
+                table.add_column("Move", style="magenta")
+                table.add_column("Score", justify="right", style="green")
+
+                for i, (move, score) in enumerate(moves):
+                    table.add_row(str(i + 1), self.nav.get_current_board().san(move), score_to_str(score))
+                
+                self._console.print(table)
+
+                choice = self._console.input("Enter line number to play, or anything else to cancel: ")
+                if choice.isdigit() and 1 <= int(choice) <= len(moves):
+                    move_to_play = moves[int(choice) - 1][0]
+                    self.nav.make_move(self.nav.get_current_board().san(move_to_play))
+                else:
+                    self._render()
+
             except EngineError as exc:
-                print(exc)
-            input("Press Enter to continue…")
+                self._console.print(f"[bold red]Engine Error: {exc}[/bold red]")
+                self._console.input("Press Enter to continue…")
             return False
         if cmd.lower() == "r":
             play_sound("click.mp3")

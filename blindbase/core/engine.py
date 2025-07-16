@@ -96,6 +96,11 @@ class Engine:
     """Facade used by callers."""
 
     @staticmethod
+    def get() -> chess.engine.SimpleEngine:
+        """Returns the singleton engine instance."""
+        return _SingletonEngine.get()
+
+    @staticmethod
     def evaluate(board: chess.Board, depth: int = 15) -> chess.engine.Score:
         eng = _SingletonEngine.get()
         info = eng.analyse(board, chess.engine.Limit(depth=depth))
