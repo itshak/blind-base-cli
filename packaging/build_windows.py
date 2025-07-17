@@ -34,7 +34,7 @@ def main() -> None:
     env = dict(os.environ)
 
     # Ensure python-chess and pyinstaller are installed within this environment
-    run(f"{sys.executable} -m pip install python-chess pyinstaller typer", env=env)
+    run(f"{sys.executable} -m pip install python-chess pyinstaller typer pydantic pydantic-settings", env=env)
 
     # Dynamically determine the path to the 'chess' module
     spec = importlib.util.find_spec("chess")
@@ -47,7 +47,7 @@ def main() -> None:
         "--add-binary blindbase/engine/win/stockfish.exe;engine/win "
         "--add-data blindbase/sounds;blindbase/sounds "
         f"--add-data {CHESS_MODULE_PATH};chess "
-        "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import pygame --hidden-import tomlkit --hidden-import urllib3 --hidden-import certifi --collect-all typer "
+        "--hidden-import pygame --hidden-import tomlkit --hidden-import urllib3 --hidden-import certifi --collect-all typer --collect-all pydantic --collect-all pydantic_settings "
         "blindbase/menu.py"
     )
 
