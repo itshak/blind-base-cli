@@ -47,7 +47,7 @@ def main() -> None:
         "--add-binary blindbase/engine/win/stockfish.exe;engine/win "
         "--add-data blindbase/sounds;blindbase/sounds "
         f"--add-data {CHESS_MODULE_PATH};chess "
-        "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import pygame "
+        "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import pygame --hidden-import tomlkit "
         "blindbase/menu.py"
     )
 
