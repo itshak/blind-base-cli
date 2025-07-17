@@ -15,7 +15,8 @@ def get_console() -> Console:
     return _console
 
 
-from blindbase.core.settings import settings, BOARD_THEMES
+from blindbase.core.settings import settings
+from blindbase.ui.themes import BOARD_THEMES
 
 
 UNICODE_PIECES = {

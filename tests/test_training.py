@@ -7,6 +7,7 @@ import io
 
 import chess
 import chess.pgn
+from types import SimpleNamespace
 
 from blindbase.core.navigator import GameNavigator
 from blindbase.ui.views.training import TrainingView
@@ -25,6 +26,10 @@ def test_training_quit(monkeypatch):
     nav = GameNavigator(game)
     # first input 'q'
     monkeypatch.setattr(builtins, "input", lambda *_a, **_kw: "q")
+    monkeypatch.setattr(
+        "blindbase.ui.board.settings",
+        SimpleNamespace(ui=SimpleNamespace(board_theme="default")),
+    )
     with contextlib.suppress(TrainingView.ExitRequested):
         TrainingView(nav, player_is_white=True).run()
 
@@ -37,6 +42,10 @@ def test_training_correct_move(monkeypatch, capsys):
     nav = GameNavigator(game)
     inputs = iter(["e4", "q"])
     monkeypatch.setattr(builtins, "input", lambda *_: next(inputs))
+    monkeypatch.setattr(
+        "blindbase.ui.board.settings",
+        SimpleNamespace(ui=SimpleNamespace(board_theme="default")),
+    )
     with contextlib.suppress(TrainingView.ExitRequested):
         TrainingView(nav, player_is_white=True).run()
     captured = capsys.readouterr().out
