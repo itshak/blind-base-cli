@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+import importlib.util
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DIST_DIR = PROJECT_ROOT / "dist"
@@ -32,8 +33,11 @@ def main() -> None:
 
     env = dict(os.environ)
 
-    import chess
-    CHESS_MODULE_PATH = Path(chess.__file__).parent
+    # Dynamically determine the path to the 'chess' module
+    spec = importlib.util.find_spec("chess")
+    if spec is None or spec.origin is None:
+        raise RuntimeError("Could not find 'chess' module location.")
+    CHESS_MODULE_PATH = Path(spec.origin).parent
 
     PYINSTALLER_CMD = (
         f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} "
@@ -45,6 +49,7 @@ def main() -> None:
     )
 
     run(PYINSTALLER_CMD, env=env)
+
 
     print(f"Executable created at {DIST_DIR / (NAME + '.exe')}")
 
