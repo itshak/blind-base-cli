@@ -26,6 +26,7 @@ Requires-Dist: requests>=2.26
 Requires-Dist: pydantic>=1.10
 Requires-Dist: pydantic-settings>=2.0
 Requires-Dist: pygame>=2.5.2
+Requires-Dist: tomlkit>=0.12
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0; extra == "dev"
 Requires-Dist: pytest-rich>=0.6; extra == "dev"
