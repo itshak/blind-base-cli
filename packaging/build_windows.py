@@ -14,15 +14,13 @@ import subprocess
 import sys
 from pathlib import Path
 import site
+import chess
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DIST_DIR = PROJECT_ROOT / "dist"
 NAME = "blindbase"
 
-def get_site_packages_path():
-    return site.getsitepackages()[0]
-
-CHESS_MODULE_PATH = os.path.join(get_site_packages_path(), "chess")
+CHESS_MODULE_PATH = Path(chess.__file__).parent
 
 PYINSTALLER_CMD = (
     f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} "
