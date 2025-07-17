@@ -40,7 +40,7 @@ function build_x86() {
   fi
   source "$VENV/bin/activate"
   pip install --upgrade pip setuptools wheel >/dev/null
-  pip install . pyinstaller playsound pyobjc >/dev/null
+  pip install . pyinstaller pygame pyobjc >/dev/null
   echo "[+] Building $OUT_NAME (x86_64)"
   arch -x86_64 python -m PyInstaller --clean --onefile --target-arch x86_64 \
          --name "$OUT_NAME" \
@@ -50,10 +50,8 @@ function build_x86() {
          --hidden-import pydantic_core \
          --hidden-import pydantic_settings \
          --hidden-import typing_extensions \
-         --hidden-import tomli \
-         --hidden-import tomlkit \
          --hidden-import tkinter \
-         --hidden-import playsound \
+         --hidden-import pygame \
          blindbase/menu.py
   deactivate
 }

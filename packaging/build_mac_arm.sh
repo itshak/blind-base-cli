@@ -40,7 +40,7 @@ function build_arm() {
   fi
   source "$VENV/bin/activate"
   pip install --upgrade pip setuptools wheel >/dev/null
-  pip install . pyinstaller playsound pyobjc >/dev/null
+  pip install . pyinstaller pygame pyobjc >/dev/null
   echo "[+] Building $OUT_NAME (arm64)"
   python -m PyInstaller --clean --onefile --target-arch arm64 \
          --name "$OUT_NAME" \
@@ -50,9 +50,7 @@ function build_arm() {
          --hidden-import pydantic_core \
          --hidden-import pydantic_settings \
          --hidden-import typing_extensions \
-         --hidden-import tomli \
-         --hidden-import tomlkit \
-         --hidden-import playsound \
+         --hidden-import pygame \
          blindbase/menu.py
   deactivate
 }
