@@ -40,7 +40,7 @@ function build_x86() {
   fi
   source "$VENV/bin/activate"
   pip install --upgrade pip setuptools wheel >/dev/null
-  pip install . pyinstaller pygame pyobjc >/dev/null
+  pip install . pyinstaller pygame pyobjc tomlkit >/dev/null
   echo "[+] Building $OUT_NAME (x86_64)"
   arch -x86_64 python -m PyInstaller --clean --onefile --target-arch x86_64 \
          --name "$OUT_NAME" \
