@@ -94,7 +94,7 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
       - name: Build exe
-        run: python packaging/build_windows.py
+        run: python -m packaging.build_windows
       - name: Upload artefact
         uses: actions/upload-artifact@v4
         with:
