@@ -29,7 +29,7 @@ PYINSTALLER_CMD = (
     "--add-binary blindbase/engine/win/stockfish.exe;engine/win "
     "--add-data blindbase/sounds;blindbase/sounds "
     f"--add-data {CHESS_MODULE_PATH};chess "
-    "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import tomlkit --hidden-import playsound "
+    "--hidden-import pydantic --hidden-import pydantic_settings --hidden-import pygame "
     "blindbase/menu.py"
 )
 
