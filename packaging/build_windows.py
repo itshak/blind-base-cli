@@ -34,7 +34,7 @@ def main() -> None:
     env = dict(os.environ)
 
     # Ensure python-chess and pyinstaller are installed within this environment
-    run(f"{sys.executable} -m pip install python-chess pyinstaller", env=env)
+    run(f"{sys.executable} -m pip install python-chess pyinstaller tomlkit", env=env)
 
     # Dynamically determine the path to the 'chess' module
     spec = importlib.util.find_spec("chess")
