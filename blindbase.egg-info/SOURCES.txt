@@ -6,6 +6,7 @@ blindbase/__main__.py
 blindbase/analysis.py
 blindbase/app.py
 blindbase/menu.py
+blindbase/sounds_util.py
 blindbase.egg-info/PKG-INFO
 blindbase.egg-info/SOURCES.txt
 blindbase.egg-info/dependency_links.txt
@@ -23,10 +24,12 @@ blindbase/core/navigator.py
 blindbase/core/opening_tree.py
 blindbase/core/pgn.py
 blindbase/core/settings.py
+blindbase/core/stream.py
 blindbase/ui/__init__.py
 blindbase/ui/accessibility.py
 blindbase/ui/base.py
 blindbase/ui/board.py
+blindbase/ui/themes.py
 blindbase/ui/utils.py
 blindbase/ui/panels/analysis.py
 blindbase/ui/panels/game_list.py

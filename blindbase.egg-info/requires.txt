@@ -2,6 +2,9 @@ typer[all]>=0.9
 rich>=13
 python-chess>=1.999
 requests>=2.26
+pydantic>=1.10
+pydantic-settings>=2.0
+pygame>=2.5.2
 
 [dev]
 pytest>=7.0
