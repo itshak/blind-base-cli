@@ -49,7 +49,12 @@ function build_x86() {
          --hidden-import pydantic \
          --hidden-import pydantic_core \
          --hidden-import pydantic_settings \
-         --hidden-import typing_extensions \n         --hidden-import tkinter \n         --hidden-import pygame \n         --hidden-import urllib3 \n         --hidden-import certifi \n         blindbase/menu.py
+         --hidden-import typing_extensions \
+         --hidden-import tkinter \
+         --hidden-import pygame \
+         --hidden-import urllib3 \
+         --hidden-import certifi \
+         blindbase/menu.py
   deactivate
 }
 
