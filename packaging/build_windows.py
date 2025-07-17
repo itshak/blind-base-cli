@@ -13,16 +13,10 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-import site
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DIST_DIR = PROJECT_ROOT / "dist"
 NAME = "blindbase"
-
-# PYINSTALLER_CMD will be defined inside main() after chess is imported
-
-
-
 
 
 def run(cmd: str, env: dict | None = None) -> None:
@@ -38,8 +32,18 @@ def main() -> None:
 
     env = dict(os.environ)
 
-    import chess
-    CHESS_MODULE_PATH = Path(chess.__file__).parent
+    # Dynamically determine the path to the 'chess' module
+    pip_show_output = subprocess.run(
+        [sys.executable, "-m", "pip", "show", "python-chess"],
+        capture_output=True, text=True, check=True
+    ).stdout
+    for line in pip_show_output.splitlines():
+        if line.startswith("Location:"):
+            chess_location = Path(line.split(": ", 1)[1])
+            CHESS_MODULE_PATH = chess_location / "chess"
+            break
+    else:
+        raise RuntimeError("Could not find 'chess' module location.")
 
     PYINSTALLER_CMD = (
         f"{sys.executable} -m PyInstaller --clean --onefile --name {NAME} "
@@ -51,6 +55,7 @@ def main() -> None:
     )
 
     run(PYINSTALLER_CMD, env=env)
+
     print(f"Executable created at {DIST_DIR / (NAME + '.exe')}")
 
 
