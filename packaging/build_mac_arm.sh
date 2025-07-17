@@ -51,6 +51,9 @@ function build_arm() {
          --hidden-import pydantic_settings \
          --hidden-import typing_extensions \
          --hidden-import pygame \
+         --hidden-import urllib3 \
+         --hidden-import certifi \
+         --hidden-import tomlkit \
          blindbase/menu.py
   deactivate
 }

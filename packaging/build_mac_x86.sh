@@ -52,6 +52,8 @@ function build_x86() {
          --hidden-import typing_extensions \
          --hidden-import tkinter \
          --hidden-import pygame \
+         --hidden-import urllib3 \
+         --hidden-import certifi \
          blindbase/menu.py
   deactivate
 }
