@@ -1,4 +1,10 @@
+"""Opening training interactive view.
+
+Allows the user to play through the main-line of a PGN game while the
+computer replies with random moves from the available variations.
+"""
 from __future__ import annotations
+
 import random
 from typing import Dict, Optional
 import chess
@@ -10,7 +16,7 @@ from rich.table import Table
 from blindbase.core.settings import settings
 from blindbase.ui.utils import show_help_panel
 from blindbase.ui.board import render_board
-from blindbase.mll_trainer import OpeningTrainer
+from blindbase.core.navigator import GameNavigator
 from blindbase.utils.board_desc import (
     board_summary,
     describe_piece_locations,
@@ -32,14 +38,21 @@ class TrainingView:
         """Internal helper to restart training without exiting."""
         pass
 
-    def __init__(self, trainer: OpeningTrainer, player_is_white: bool):
-        self.trainer = trainer
+    def __init__(self, navigator: GameNavigator, player_is_white: bool):
+        #self.nav = navigator
+        import json
+        conf = json.load(open('conf.json')) # TODO: to read from settings
+        conf['my_side'] = 'white' if player_is_white else 'black'
+        game = navigator._root
+        from blindbase.core.opening_trainer import OpeningTrainer
+        self.nav = OpeningTrainer(conf, game)
+        self.nav.dearchivate()
         self.player_is_white = player_is_white
         self._console = Console()
         # orient board so player's side is at bottom
         self._flip = not player_is_white
         # Remember computer's random choices per node so session is stable
-        self._ai_choices: Dict[chess.pgn.GameNode, chess.Move] = {}
+        #self._ai_choices: Dict[chess.pgn.GameNode, chess.Move] = {}
         # stats
         self.correct_guesses = 0
         self.failed_guesses = 0
@@ -54,8 +67,9 @@ class TrainingView:
             try:
                 while True:
                     self._render()
-                    board = self.trainer.get_current_board()
-                    player_turn = board.turn == (chess.WHITE if self.player_is_white else chess.BLACK)
+                    #board = self.nav.get_current_board()
+                    #player_turn = board.turn == (chess.WHITE if self.player_is_white else chess.BLACK)
+                    player_turn = self.nav.is_my_turn()
                     if player_turn:
                         self._handle_player_turn()
                     else:
@@ -65,6 +79,8 @@ class TrainingView:
                     if self._show_summary():
                         self._reset_session()
                         continue
+                    else:
+                        self.nav.store('work.pgn')
                 # propagate to caller (GameList) by re-raising
                 raise
 
@@ -75,10 +91,10 @@ class TrainingView:
     def _render(self) -> None:
         console = self._console
         console.clear()
-        board = self.trainer.get_current_board()
+        board = self.nav.get_current_board()
         # Header (same as GameView header)
-        white = self.trainer.working_game.headers.get("White", "?")
-        black = self.trainer.working_game.headers.get("Black", "?")
+        white = self.nav.working_game.headers.get("White", "?")
+        black = self.nav.working_game.headers.get("Black", "?")
         console.print(Text(f"{white} vs {black}", style="bold yellow"))
         console.print()
         if settings.ui.show_board:
@@ -91,55 +107,105 @@ class TrainingView:
         console.print(last_move)
 
     def _last_move_text(self, board: chess.Board) -> RenderableType:
-        if self.trainer.current_node.parent is None:
-            return Text("Last move:", style="bold") + Text(" Initial position", style="yellow")
-        temp_board = self.trainer.current_node.parent.board()
-        move = self.trainer.current_node.move
+        if self.nav.current_node.parent is None:
+            return Text("Last move:", style="bold") + Text(" Initial position", style="bold") #"yellow")
+        temp_board = self.nav.current_node.parent.board()
+        move = self.nav.current_node.move
         from blindbase.utils.move_format import move_to_str
         san = move_to_str(temp_board, move, settings.ui.move_notation)
-        move_no = temp_board.fullmove_number if temp_board.turn == chess.BLACK else temp_board.fullmove_number - 1
+        move_no = temp_board.fullmove_number # if temp_board.turn == chess.BLACK else temp_board.fullmove_number - 1
         prefix = f"{move_no}{'...' if temp_board.turn == chess.BLACK else '.'}"
-        return Text("Last move:", style="bold") + Text(f" {prefix} {san}", style="yellow")
+        return Text("Last move:", style="bold") + Text(f" {prefix} {san}", style="bold") # "yellow")
 
     # ------------------------------------------------------------------
     # Player turn
     # ------------------------------------------------------------------
 
     def _handle_player_turn(self) -> None:
-        max_attempts = settings.opening_training.number_of_attempts
+        node = self.nav.current_node
+        if not node.variations:
+            self._console.print("[green]End of line – training complete![/green]")
+            self.nav.logger.debug('EOL is reached in player turn')
+            raise self.ExitRequested
+        max_attempts = 1 #settings.opening_training.number_of_attempts
         attempts = 0
         while attempts < max_attempts:
             cmd = self._console.input("Your move (h for help): ").strip()
             if not self._dispatch_common(cmd):
+                continue  # handled help/settings/etc.
+            try:
+                move = None if cmd=='' else self._parse_move_input(cmd)
+            except ValueError:
+                self._console.print("[red]Invalid move format.[/red]")
+                play_sound("illegal.mp3")
+                #attempts += 1
                 continue
-            if self.trainer.try_my_move(cmd):
+            #end of try/except
+            res = self.nav.submit_my_move(move)
+            #if move == expected_move:
+            if res:
+                #move_san = self.nav.get_current_board().san(move)
+                #self.nav.make_move(san_std)
+                self.nav.review_my_move()
                 self.correct_guesses += 1
                 play_sound("correct.mp3")
-                self.trainer.review_my_move(0.1) # lrate
                 return
             else:
                 self._console.print("[red]Incorrect – try again.[/red]")
                 play_sound("incorrect.mp3")
                 attempts += 1
+            #end of if/else
+        #end of while
+
+        # failed 3 times – show correct move and push it
         self.failed_guesses += 1
-        correct_move_san = self.trainer.review_my_move(0.1) # lrate
-        self._console.print(f"[yellow]Correct move was {correct_move_san}. Moving on…[/yellow]")
+        expected_move = node.variations[0].move  # main line
+        from blindbase.utils.move_format import move_to_str
+        san_disp = move_to_str(self.nav.get_current_board(), expected_move, settings.ui.move_notation)
+        #self._console.print(f"[yellow]Correct move was {san_disp}. Moving on…  [/yellow]")
+        self._console.print(f"Correct move was: {san_disp}")
+        self._wait_for_enter()
+        #san_std = self.nav.get_current_board().san(expected_move)
+        #self.nav.make_move(san_std)
+        san_std = self.nav.review_my_move()
+
+    # ------------------------------------------------------------------
+    # Computer turn
+    # ------------------------------------------------------------------
 
     def _handle_computer_turn(self) -> None:
-        move_san = self.trainer.select_max_loss_move()
-        self._console.print(Text(f"Opponent will play: {move_san}", style="cyan"))
+        node = self.nav.current_node
+        if not node.variations:
+            self._console.print("[green]Line finished![/green]")
+            self.nav.logger.debug('EOL is reached on opponent turn')
+            raise self.ExitRequested
+        # choose or fetch stored move
+        #if node in self._ai_choices:
+        #    mv = self._ai_choices[node]
+        #else:
+        #    mv = random.choice([v.move for v in node.variations])
+        #    self._ai_choices[node] = mv
+        san_std = self.nav.select_opponent_move()
+        mv = node.board().parse_san(san_std)
+        from blindbase.utils.move_format import move_to_str
+        san_disp = move_to_str(self.nav.get_current_board(), mv, settings.ui.move_notation)
+        #san_std = self.nav.get_current_board().san(mv)
+        self._console.print(Text(f"Opponent will play: {san_disp}", style='bold')) # "cyan"))
         play_sound("move-opponent.mp3")
-        while True:
-            cmd = self._console.input("Enter to continue (h for help): ").strip()
-            if cmd == "":
-                break
-            if not self._dispatch_common(cmd):
-                continue
-        self.trainer.go_forward(move_san)
+        self._wait_for_enter()
+
+        self.nav.make_move(san_std)
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+    def _wait_for_enter(self):
+        while True:
+            cmd = self._console.input("Enter to continue (h for help): ").strip()
+            if cmd == "":
+                break
+            self._dispatch_common(cmd)
+        #end of while
 
     def _dispatch_common(self, cmd: str) -> bool:
         lc = cmd.lower()
@@ -173,7 +239,7 @@ class TrainingView:
         return True  # cmd not handled
 
     def _parse_move_input(self, text: str) -> chess.Move:
-        board = self.trainer.get_current_board()
+        board = self.nav.get_current_board()
         # Try SAN as-is
         try:
             return board.parse_san(text)
@@ -204,7 +270,8 @@ class TrainingView:
 
     def _reset_session(self) -> None:
         # Go back to initial position using navigator
-        self.trainer.go_root()
+        while self.nav.current_node.parent is not None:
+            self.nav.go_back()
         self.correct_guesses = 0
         self.failed_guesses = 0
 
@@ -213,17 +280,17 @@ class TrainingView:
     # ------------------------------------------------------------------
 
     def _read_board_aloud(self):
-        text = board_summary(self.trainer.get_current_board())
+        text = board_summary(self.nav.get_current_board())
         print(text)
         input("Press Enter to continue…")
 
     def _list_piece_squares(self, piece: str):
-        desc = describe_piece_locations(self.trainer.get_current_board(), piece)
+        desc = describe_piece_locations(self.nav.get_current_board(), piece)
         print(desc)
         input("Press Enter to continue…")
 
     def _describe_file_or_rank(self, spec: str):
-        text = describe_file_or_rank(self.trainer.get_current_board(), spec)
+        text = describe_file_or_rank(self.nav.get_current_board(), spec)
         print(text)
         input("Press Enter to continue…")
 

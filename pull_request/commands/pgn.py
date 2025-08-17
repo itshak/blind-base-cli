@@ -97,18 +97,8 @@ def show(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
 @app.command()
 def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     """Opening training mode using PGN main lines."""
-    if str(file).endswith("_train.pgn"):
-        train_pgn_path = str(file)
-    else:
-        train_pgn_path = str(file).replace('.pgn', '_train.pgn')
-
-    if not Path(train_pgn_path).exists():
-        typer.echo(f"Training file not found: {train_pgn_path}")
-        typer.echo("Please run 'prepare_training' first.")
-        raise typer.Exit(code=1)
-
     play_sound("notify.mp3")
-    gm = core_pgn.load_games(train_pgn_path)
+    gm = core_pgn.load_games(file)
     if not gm.games:
         typer.echo("File contains no games", err=True)
         raise typer.Exit(code=1)
@@ -132,41 +122,6 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
         play_sound("click.mp3")
         # back to list instead of quitting whole app
         return train(file)
-
-
-
-@app.command()
-def prepare_training(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
-    """Prepare a PGN file for training by calculating move weights."""
-    from rich.console import Console
-    from blindbase.mll_trainer import merge_games, OpeningTrainer
-    from blindbase.core.settings import settings
-
-    console = Console()
-    train_pgn_path = str(file).replace('.pgn', '_train.pgn')
-
-    console.print("Preparing PGN for training...")
-    # Merge games if necessary
-    merged_pgn_path = str(file).replace('.pgn', '_merged.pgn')
-    if not merge_games(str(file), merged_pgn_path):
-        console.print("[red]Error merging PGN games.[/red]")
-        return
-
-    # Calculate weights
-    console.print("Calculating weights...")
-    engine_path = settings.engine.path
-    if engine_path is None:
-        engine_path = "blindbase/engine/mac/stockfish"
-
-    trainer = OpeningTrainer(
-        my_side='white',  # my_side is not used in setup_all_scores
-        engine_path=engine_path,
-        inp_fn=merged_pgn_path
-    )
-    trainer.setup_all_scores(conf={}, stat_client=None)
-    trainer.store(train_pgn_path)
-
-    console.print(f"Training file created: {train_pgn_path}")
 
 
 @app.command(name="list")

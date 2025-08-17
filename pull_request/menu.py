@@ -22,7 +22,6 @@ from typing import Optional
 
 from blindbase.core.settings import settings
 from blindbase.commands import pgn as pgn_cmd
-
 from blindbase.commands import broadcasts as broadcasts_cmd
 from blindbase.ui.panels.settings_menu import run_settings_menu
 from blindbase.sounds_util import play_sound
@@ -102,8 +101,7 @@ def _render_main_menu() -> None:
     opts = [
         ("1", "View PGN"),
         ("2", "Opening training"),
-        ("3", "Prepare training"),
-        ("4", "Broadcasts"),
+        ("3", "Broadcasts"),
         ("o", "Settings"),
         ("a", "About"),
         ("q", "Quit"),
@@ -130,19 +128,15 @@ def _run_main_menu() -> None:
         if choice == "o":
             run_settings_menu()
             continue
-        if choice == "4":
+        if choice == "3":
             _launch_broadcasts()
             continue
-        if choice in {"1", "2", "3"}:
+        if choice in {"1", "2"}:
             pgn_path = _select_pgn_file()
             if pgn_path is None:
                 play_sound("click.mp3")
                 continue
-            if choice == "3":
-                from blindbase.commands.pgn import prepare_training
-                prepare_training(pgn_path)
-            else:
-                _launch_pgn(choice, pgn_path)
+            _launch_pgn(choice, pgn_path)
             continue
         _console.print("[red]Invalid choice.[/red]")
         play_sound("decline.mp3")
@@ -158,10 +152,7 @@ def _launch_pgn(mode_choice: str, pgn_path: Path) -> None:
     """Run PGN viewer or trainer safely, returning to menu on exit."""
     play_sound("notify.mp3")
     import click
-    if mode_choice == "1":
-        func = pgn_cmd.show
-    else:
-        func = pgn_cmd.train
+    func = pgn_cmd.show if mode_choice == "1" else pgn_cmd.train
     try:
         func(pgn_path)
     except (SystemExit, click.exceptions.Exit) as exc:  # swallow Typer exit
@@ -209,15 +200,28 @@ def main(argv: list[str] | None = None) -> None:
     if argv is None:
         argv = sys.argv[1:]
 
-    if len(argv) > 1 and argv[0] == 'pgn' and argv[1] == 'prepare_training':
-        from blindbase.commands.pgn import prepare_training
-        prepare_training(Path(argv[2]))
-        return
-    elif len(argv) > 1 and argv[0] == 'pgn' and argv[1] == 'train':
-        from blindbase.commands.pgn import train
-        train(Path(argv[2]))
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("pgn", nargs="?", help="PGN file to open")
+    parser.add_argument("--train", "-t", action="store_true", help="Train openings instead of viewing")
+    parser.add_argument("--broadcasts", "-b", action="store_true", help="Open broadcasts explorer directly")
+    args, _unknown = parser.parse_known_args(argv)
+
+    if args.broadcasts:
+        _launch_broadcasts()
+        _run_main_menu()
         return
 
+    if args.pgn:
+        pgn_path = Path(args.pgn)
+        if not pgn_path.exists():
+            print(f"File not found: {pgn_path}", file=sys.stderr)
+            sys.exit(1)
+        mode_choice = "2" if args.train else "1"
+        _launch_pgn(mode_choice, pgn_path)
+        _run_main_menu()
+        return
+
+    # No arguments → interactive main menu
     _run_main_menu()
 
 
