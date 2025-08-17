@@ -6,6 +6,8 @@ blindbase/__main__.py
 blindbase/analysis.py
 blindbase/app.py
 blindbase/menu.py
+blindbase/merge_games.py
+blindbase/mll_trainer.py
 blindbase/sounds_util.py
 blindbase.egg-info/PKG-INFO
 blindbase.egg-info/SOURCES.txt

@@ -104,9 +104,8 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
         train_pgn_path = str(file).replace('.pgn', '_train.pgn')
 
     if not Path(train_pgn_path).exists():
-        typer.echo(f"Training file not found: {train_pgn_path}")
-        typer.echo("Please run 'prepare_training' first.")
-        raise typer.Exit(code=1)
+        print(f"Training file not found: {train_pgn_path}.\nGenerating it...")
+        prepare_training(file)
 
     play_sound("notify.mp3")
     gm = core_pgn.load_games(train_pgn_path)
@@ -129,6 +128,7 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     my_side = "white" if player_is_white else "black"
     trainer = OpeningTrainer(my_side=my_side, inp_fn=train_pgn_path)
     TrainingView(trainer, player_is_white).run()
+
 
 
 
