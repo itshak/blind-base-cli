@@ -6,8 +6,8 @@ pyinstaller>=6.6.0   # only for building
 pydantic>=1.10
 pydantic-settings>=2.0
 pygame==2.6.1
-pyobjc-core
-pyobjc-framework-Cocoa
+numpy>=1.26.0
+scipy>=1.10.0
 # test/dev
 pytest>=7
 tomlkit>=0.12

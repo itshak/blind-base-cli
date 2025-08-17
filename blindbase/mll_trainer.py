@@ -277,7 +277,7 @@ class OpeningTrainer(GameNavigator):
             return False
         #end of if
         super().__init__(game)
-        #self.dearchivate()
+        self.dearchivate()
         return True
     #end of load()
 

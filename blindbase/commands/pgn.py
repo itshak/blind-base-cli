@@ -9,6 +9,7 @@ import typer
 from blindbase.core import pgn as core_pgn
 from blindbase.ui.views.game import GameView
 from blindbase.core.navigator import GameNavigator
+from blindbase.mll_trainer import OpeningTrainer
 
 from blindbase.ui.views.training import TrainingView
 from blindbase.sounds_util import play_sound
@@ -125,13 +126,9 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     from rich.prompt import Prompt
     color = Prompt.ask("Train as (w)hite or (b)lack?", choices=["w", "b"], default="w")
     player_is_white = color == "w"
-    nav = GameNavigator(game)
-    try:
-        TrainingView(nav, player_is_white).run()
-    except TrainingView.ExitRequested:
-        play_sound("click.mp3")
-        # back to list instead of quitting whole app
-        return train(file)
+    my_side = "white" if player_is_white else "black"
+    trainer = OpeningTrainer(my_side=my_side, inp_fn=train_pgn_path)
+    TrainingView(trainer, player_is_white).run()
 
 
 

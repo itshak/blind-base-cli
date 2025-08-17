@@ -51,6 +51,7 @@ class UISettings(BaseSettings):
     games_per_page: int = Field(10, description="Pagination size for games list")
     move_notation: Literal["san", "uci", "nato", "anna"] = Field("san", description="Move notation style")
     board_theme: str = Field("default", description="Board theme (default, high_contrast_light, high_contrast_dark, colorblind_red_green)")
+    sound_enabled: bool = Field(True, description="Enable sound effects")
 
     model_config = SettingsConfigDict(extra="ignore")
 
