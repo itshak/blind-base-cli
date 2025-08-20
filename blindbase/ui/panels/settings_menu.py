@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any, List, Tuple
 
 from blindbase.core.settings import settings
-from blindbase.ui.utils import clear_screen_and_prepare_for_new_content, show_help_panel
+from blindbase.ui.utils import clear_screen_and_prepare_for_new_content, show_help_panel, colorize_style
 from rich.console import Console
 from rich.table import Table
 from blindbase.ui.utils import show_help_panel
@@ -110,12 +110,12 @@ def run_settings_menu() -> None:
             # Top-level category selection
             clear_screen_and_prepare_for_new_content()
             cats = _collect_categories()
-            tbl = Table(show_header=True, header_style="bold magenta")
+            tbl = Table(show_header=True, header_style=colorize_style("bold magenta"))
             tbl.add_column("#", justify="right", style="cyan")
             tbl.add_column("Category")
             for idx, cat in enumerate(cats, 1):
                 tbl.add_row(str(idx), _pretty_name(cat))
-            console.print(Panel(tbl, title="Settings Categories", border_style="green"))
+            console.print(Panel(tbl, title="Settings Categories", border_style=colorize_style("green")))
             choice = input("Command (h for help): ").strip().lower()
             if choice == "q":
                 play_sound("click.mp3")
@@ -143,15 +143,15 @@ def run_settings_menu() -> None:
         # ------------ leaf submenu -            clear_screen_and_prepare_for_new_content()
         leafs = [ (k, v) for k, v in _collect_leaf_settings() if k.startswith(f"{current_category}.") ]
         # Build rich table grouped by section
-        tbl = Table(show_header=True, header_style="bold magenta")
+        tbl = Table(show_header=True, header_style=colorize_style("bold magenta"))
         tbl.add_column("#", justify="right", style="cyan")
         tbl.add_column("Setting")
-        tbl.add_column("Value", style="yellow")
+        tbl.add_column("Value", style=colorize_style("yellow"))
         for idx, (key, val) in enumerate(leafs, 1):
             short_key = key[len(current_category)+1:]
             desc = _DESCRIPTIONS.get(key) or _pretty_name(short_key)
             tbl.add_row(str(idx), desc, str(val))
-        console.print(Panel(tbl, title=f"{_pretty_name(current_category)} Settings", border_style="green"))
+        console.print(Panel(tbl, title=f"{_pretty_name(current_category)} Settings", border_style=colorize_style("green")))
         choice = input("Command (h for help): ").strip().lower()
         if choice == "b":
             play_sound("click.mp3")

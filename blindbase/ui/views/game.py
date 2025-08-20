@@ -271,7 +271,7 @@ class GameView:
             name = hdr.get(name_key, "?")
             title = hdr.get(prefix + "Title") or ""
             elo = hdr.get(prefix + "Elo") or ""
-            t = Text(name, style="bold yellow")
+            t = Text(name, style=colorize_style("bold yellow"))
             if title and title != "?":
                 t.append(f" [{title}]", style="green")
             if elo and elo != "?":
@@ -321,7 +321,7 @@ class GameView:
             console.print()
         # info section
         turn_txt = "White" if board.turn else "Black"
-        console.print(Text("Turn:", style="bold") + Text(f" {turn_txt}", style="yellow"))
+        console.print(Text("Turn:", style="bold") + Text(f" {turn_txt}", style=colorize_style("yellow")))
         last_move_line = self._last_move_text(board)
         console.print(last_move_line)
         # next moves
@@ -329,9 +329,9 @@ class GameView:
         if nm_list:
             console.print(Text("Next moves:", style="bold"))
             for line in nm_list:
-                console.print(Text(line, style="cyan"))
+                console.print(Text(line, style=colorize_style("cyan")))
         else:
-            console.print(Text("No next moves.", style="dim"))
+            console.print(Text("No next moves.", style=colorize_style("dim")))
 
     # ------------------------------------------------------------------
     # misc helpers
