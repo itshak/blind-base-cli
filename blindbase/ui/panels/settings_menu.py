@@ -191,8 +191,7 @@ def run_settings_menu() -> None:
                 if full_key in _ENUM_OPTIONS:
                     opts = _ENUM_OPTIONS[full_key]
                     console.print(Text(f"Choose {label.lower()}:", style="bold"))
-                    console.print(Panel("
-".join(f"{i+1}. {opt}" for i, opt in enumerate(opts)), title="Options", border_style="blue"))
+                    console.print(Panel("".join(f"{i+1}. {opt}" for i, opt in enumerate(opts)), title="Options", border_style="blue"))
                     sel = input("Select number: ").strip()
                     if sel.isdigit() and 1 <= int(sel) <= len(opts):
                         if _set_setting(full_key, opts[int(sel)-1]):
@@ -202,8 +201,8 @@ def run_settings_menu() -> None:
                         play_sound("decline.mp3")
                 elif isinstance(val, bool):
                     console.print(Text(f"Choose {label.lower()}:", style="bold"))
-                    console.print(Panel("1. Yes
-2. No", title="Options", border_style=colorize_style("blue")))
+                    console.print(Panel("""1. Yes
+2. No""", title="Options", border_style=colorize_style("blue")))
                     sel = input("Select number: ").strip()
                     if sel in {"1", "2"}:
                         if _set_setting(full_key, sel):

@@ -15,6 +15,7 @@ from rich.panel import Panel
 from rich.align import Align
 from rich.text import Text
 
+from blindbase.ui.utils import colorize_style
 from blindbase.core.settings import settings
 
 __all__ = ["GameListPanel"]

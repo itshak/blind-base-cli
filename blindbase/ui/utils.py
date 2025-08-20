@@ -4,6 +4,8 @@ from typing import Sequence, Tuple, Iterable
 from rich.table import Table
 from rich.panel import Panel
 
+from blindbase.core.settings import settings
+
 UI_SCREEN_BUFFER_HEIGHT = 35  # preserved for compatibility
 
 

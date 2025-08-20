@@ -18,6 +18,8 @@ import chess
 from rich.console import Console, Group, RenderableType
 from rich.text import Text
 
+from blindbase.ui.utils import colorize_style
+
 from blindbase.core.navigator import GameNavigator
 from blindbase.ui.board import render_board
 from blindbase.core.settings import settings
