@@ -164,15 +164,18 @@ class k_unit:
     #end of to_formal_string()
 
     def read_from_formal_string(self, buf):
-        vals = buf.split(' ')
-        self.stat = int(vals[0])
-        self.def_stat = int(vals[1])
-        self.max_score = float(vals[2])
-        self.def_score = float(vals[3])
-        self.opt_score = float(vals[4])
-        self.guess = float(vals[5])
-        self.belief = float(vals[6])
-        self.prob = float(vals[7])
+        try:
+            vals = buf.split(' ')
+            self.stat = int(vals[0])
+            self.def_stat = int(vals[1])
+            self.max_score = float(vals[2])
+            self.def_score = float(vals[3])
+            self.opt_score = float(vals[4])
+            self.guess = float(vals[5])
+            self.belief = float(vals[6])
+            self.prob = float(vals[7])
+        except (ValueError, IndexError):
+            pass
     #end of read_from_formal_string()
 #end of class k_unit
 
@@ -258,7 +261,8 @@ class OpeningTrainer(GameNavigator):
         #end of if
         buf = node.comment
         node.comment = k_unit({})
-        node.comment.read_from_formal_string(buf)
+        if buf:
+            node.comment.read_from_formal_string(buf)
         for var in node.variations:
             self.dearchivate(var)
         #end of for
@@ -355,10 +359,15 @@ class OpeningTrainer(GameNavigator):
         board = node.board()
         num = len(node.variations)
         cands,depth = select_move_candidates(engine, board, 1+num)
-        #if len(cands) <= num:
-        #    sys.stderr.write('Not enough candidates: %d expected %d\n' %(len(cands), 1+num))
-        #    sys.exit(1)
-        #end of if
+        if not cands:
+            if board.is_checkmate():
+                score = -10000
+            else:
+                score = 0
+            node.comment.max_score = score
+            node.comment.def_score = None
+            return
+
         node.comment.max_score = cp_score( cands[0][1], self.my_side)
         moves = set([ var.move for var in node.variations ])
         rem_cands =[ x for x in filter(lambda x: x[0] not in moves, cands) ]
