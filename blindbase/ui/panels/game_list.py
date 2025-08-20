@@ -191,7 +191,7 @@ class GameListPanel:
             event = g.headers.get("Event", "")[:20]
             tbl.add_row(str(idx + 1), white, black, result, date, event)
 
-        panel = Panel(Align.left(tbl), title=self.title, border_style="blue")
+        panel = Panel(Align.left(tbl), title=self.title, border_style=colorize_style("blue"))
         self._console.clear()
         self._console.print(page_header)
         self._console.print(panel)

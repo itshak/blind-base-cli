@@ -47,6 +47,7 @@ from typing import Literal
 
 class UISettings(BaseSettings):
     theme: str = Field("light", description="colour theme (light|dark)")
+    color_theme: Literal["Default", "Highlighted"] = Field("Default", description="Color theme for the UI")
     show_board: bool = Field(True, description="Display ASCII board; if False only text")
     games_per_page: int = Field(10, description="Pagination size for games list")
     move_notation: Literal["san", "uci", "nato", "anna"] = Field("san", description="Move notation style")

@@ -73,10 +73,10 @@ class PgnView(View):
         if next_moves:
             nm_text = Text("Next moves:\n")
             for idx, san in enumerate(next_moves, 1):
-                nm_text.append(f"{idx}. {san}\n", style="cyan")
+                nm_text.append(f"{idx}. {san}\n", style=colorize_style("cyan"))
             info_lines.append(nm_text)
         else:
-            info_lines.append(Text("Game over.", style="dim"))
+            info_lines.append(Text("Game over.", style=colorize_style("dim")))
 
         return Group(board_group, Text(), *info_lines)
 

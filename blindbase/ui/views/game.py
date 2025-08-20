@@ -302,9 +302,9 @@ class GameView:
             if self.white_clock or self.black_clock:
                 clock_txt = Text()
                 if self.white_clock:
-                    clock_txt.append(f"White time: {self.white_clock}  ", style="bold yellow")
+                    clock_txt.append(f"White time: {self.white_clock}  ", style=colorize_style("bold yellow"))
                 if self.black_clock:
-                    clock_txt.append(f"Black time: {self.black_clock}", style="bold cyan")
+                    clock_txt.append(f"Black time: {self.black_clock}", style=colorize_style("bold cyan"))
                 console.print(clock_txt)
             console.print()  # blank line
         else:
@@ -312,9 +312,9 @@ class GameView:
             if self.white_clock or self.black_clock:
                 clock_txt = Text()
                 if self.white_clock:
-                    clock_txt.append(f"White time: {self.white_clock}  ", style="bold yellow")
+                    clock_txt.append(f"White time: {self.white_clock}  ", style=colorize_style("bold yellow"))
                 if self.black_clock:
-                    clock_txt.append(f"Black time: {self.black_clock}", style="bold cyan")
+                    clock_txt.append(f"Black time: {self.black_clock}", style=colorize_style("bold cyan"))
                 console.print(clock_txt)
             console.print()
         # info section
@@ -337,7 +337,7 @@ class GameView:
 
     def _last_move_text(self, board: chess.Board) -> RenderableType:
         if self.nav.current_node.parent is None:
-            return Text("Last move:", style="bold") + Text(" Initial position", style="yellow")
+            return Text("Last move:", style="bold") + Text(" Initial position", style=colorize_style("yellow"))
         temp_board = self.nav.current_node.parent.board()
         move = self.nav.current_node.move
         try:
@@ -346,7 +346,7 @@ class GameView:
             mv_text = temp_board.san(move)
         move_no = temp_board.fullmove_number if temp_board.turn == chess.BLACK else temp_board.fullmove_number - 1
         prefix = f"{move_no}{'...' if temp_board.turn == chess.BLACK else '.'}"
-        return Text("Last move:", style="bold") + Text(f" {prefix} {mv_text}", style="yellow")
+        return Text("Last move:", style="bold") + Text(f" {prefix} {mv_text}", style=colorize_style("yellow"))
 
     def _show_help(self) -> None:
         from blindbase.ui.utils import show_help_panel

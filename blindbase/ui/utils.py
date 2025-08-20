@@ -17,6 +17,17 @@ def clear_screen_and_prepare_for_new_content():
     sys.stdout.flush()
 
 
+def colorize(text, color):
+    if settings.ui.color_theme == "Default":
+        return text
+    return f"[{color}]{text}[/{color}]"
+
+def colorize_style(style):
+    if settings.ui.color_theme == "Default":
+        return ""
+    return style
+
+
 def show_help_panel(console, title: str, commands: Sequence[tuple[str, str]]) -> None:
     """Render a consistent Rich-styled help panel.
 
@@ -30,9 +41,9 @@ def show_help_panel(console, title: str, commands: Sequence[tuple[str, str]]) ->
         Iterable of (key, description) pairs.
     """
     table = Table(box=None, show_header=False, pad_edge=False)
-    table.add_column("Key", style="bold green", no_wrap=True)
-    table.add_column("Action", style="yellow")
+    table.add_column("Key", style=colorize_style("bold green"), no_wrap=True)
+    table.add_column("Action", style=colorize_style("yellow"))
     for key, desc in commands:
         table.add_row(key, desc)
-    panel = Panel(table, title=f"[bold cyan]{title}[/bold cyan]", border_style="cyan")
+    panel = Panel(table, title=colorize(title, "bold cyan"), border_style=colorize_style("cyan"))
     console.print(panel)
