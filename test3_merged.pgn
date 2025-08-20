@@ -1,0 +1,43 @@
+[Event "?"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "Introduction"]
+[Black "Introduction"]
+[Result "*"]
+
+1. e4 c6
+{ Caro-Kann: A Lifetime Repertoire  It is with great joy that I introduce the reader to the Caro-Kann Defence. World Champions like Anatoly Karpov and Mikhail Botvinnik played the Caro throughout their entire career, which should serve as a stamp of approval to make it our Lifetime Repertoire.  I, Erwin l'Ami from the Netherlands, have been a grandmaster since 2005 and a professional chess player ever since. My most notable tournament victory was the 2015 edition of the Reykjavik Open and, dating back to 2006, I have been a member of the Dutch Olympiad team. But I am perhaps better known for my work as a second. A second helps another player come to the game as best prepared as possible. That means opening work, and a lot of it!  For about three years I was part of Veselin Topalov’s team and the memories around Topalov’s 2010 World Championship match against Vishy Anand I still cherish to this day – despite the result! These days, I regularly help Anish Giri who is arguably the best prepared player in the world. Without doubt, the work for this course greatly corresponds with the work I have been doing as a second.  Engines  Engines changed the world of chess – and I will bypass the discussion whether they did in a good or bad way  (bad, obviously)  . As an ambitious 17 y.o. International Master I bought my first computer, at the time - state of the art. It had four whooping processors and I was proudly running the program Junior 6, which was hugely aggressive and would suggest the most ludicrous sacrifices. Developments have been rapid since those days and my phone would now defeat my sophisticated computer with disappointing ease.  Just two years ago, the latest engine revolution hit the chess world when Google introduced its AlphaZero  (A0)  , which demolished the top program Stockfish 8 with considerable ease. A0 uses a neural network to play the game of chess which was a novelty in the world of chess engines. An open source project, based on Google’s technique, started soon after and nowadays Leela Zero  (Lc0)  can be used by any chess fan across the globe. The difference with Lc0 and Stockfish is that the former has incredible instincts, while the later calculates incredibly well. When using these two engines in the preparation of this course, Lc0 pointed out a multitude of new directions. The combination is the perfect analysis tool.  The process  Given the special times we live in I - like the majority of world’s population - spent most of my days indoors for the past few months. That gave me the opportunity to submerge myself into this project like I have never done before. I have quite literally woken up and fallen asleep with this course in mind. At times I thought the finishing line would never be in sight! You can be certain: the responsibility of handling a repertoire that lasts a lifetime is one I take very seriously! This is also a good moment to thank my wife Alina for the enormous contributions she has made in the creation of this course.  Quick Pointers  The course obviously covers the entire Caro-Kann, meaning all of White’s possibilities after 1.e4 c6. In two cases I have decided to give an alternative as well. Since this is a Lifetime Repertoire I think it’s a good idea to be able to switch things around. That’s why in the Advance Variation:   @@StartFEN@@rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1@@EndFEN@@  1.e4  c6  2.d4  d5  3.e5  I have covered the conventional  3...Bf5  , as well as the alternative  3...c5  (Chapters1 -3.)  The same applies to the Classical Variation:   1.e4  c6  2.d4  d5  3.Nc3  dxe4  4.Nxe4  where I, perhaps somewhat surprisingly to seasoned Caro-Kann players, have chosen  4...Nf6  as the main recommendation. At the same time, I covered themore popular  4...Bf5  as well and I leave it to the reader to decide which of the systems appeals more. I would recommend going through all the material before making that decision. Under the guidance of Lc0, the move4...Nf6 in the Classical Variation has truly undergone a metamorphosis!  Everything related to the Classical Variation is covered in Chapters 4-8 and all other variations have gotten just one recommendation as they are not nearly as critical. I have tried to illustrate why I came to certain choices throughout the course and hope that I have been able to get those points across. Given the abundance of trainable lines, I have tried to limit the number of trainable moves, often cutting the line towards the end. That way I feel the course remains within acceptable boundaries.  When going through the moves a bunch of arrows, circles and whatnot will appear on the board. I trust it will be easier when you just see it. A little guideline regarding the colours:  yellow - indicates an idea for White  red - points at something bad  green - is used for Black's plans.    Discussions & Updates  Finally, I am very curious what you think of the course. I hope we will have a lively Discussion Forum and I am always ready to answer any questions you may have. It is my intention to regularly update the course since opening theory has this annoying tendency to always move forward!  Now without further ado, I would invite you to the Quickstarter Guide in order to get a peek into what we will be doing in this course. }
+2. d4 { The most logical reply. White takes hold of the centre. } 2... d5 3. e5
+{ The Advance Variation is currently considered the big test against the Caro-Kann. White simply grabs space. }
+3... Bf5
+{ One of two moves I have covered in this course. Before playing e7-e6, Black first gets his bishop out.   The more direct  3...c5  is the alternative. }
+4. Nf3
+{ White has many options onmove 4 and we will cover them all in the course. } (
+4. Nc3 { The most aggressive interpretation of the Advance Variation. } 4... e6
+5. g4 Bg6 6. Nge2
+{ From here the knight often jumps to f4 which, in combination with h2-h4 is a dangerous plan. }
+6... c5 { Hitting the centre. } 7. h4 h5 8. Nf4 Bh7
+{ The bishop should be kept, even if it costs a pawn. } 9. Nxh5 Nc6
+{ Is excellent for Black, aspractice has shown. } ) 4... e6 5. Be2
+{ TheShort Variation is considered the main line, where White is naturally developing his pieces. }
+5... c5
+{ The most reliable move. Black wants to play Nc6 next to challenge the centre. }
+6. Be3 Qb6 7. Nc3 Nc6
+{ All according to plan.   Note that  7...Qxb2  8.Qb1  Qxb1+  9.Rxb1  c4  10.Rxb7  Nc6  11.Nb5  is known to be dangerous for Black. }
+8. Na4
+{ Used byAnish Giri to defeat David Navara in the Gashimov Memorial of 2018. }
+( 8. O-O
+{ This leads to veryforcing variations. If Black is aware of them, there is not much to fear. }
+8... Qxb2 9. Qe1 cxd4 10. Bxd4 Nxd4 11. Nxd4 Bb4 12. Ndb5 ( 12. Rb1
+{ The old main line, which leads to an endgame where White is a pawn down but has enough activity to not run much risk. }
+12... Bxc3 13. Rxb2 Bxe1 14. Rxe1 b6
+{ Practice has proven White to have no advantage here. For more details see the correspondingchapter. }
+) 12... Ba5
+{ Fabiano Caruana famously defeated Vachier Lagrave from this position on his way to winning 7 games in a row in the 2014 Sinquefield Cup. Luckily, since that game improvements have been found, makingthe line very playable again. }
+) 8... Qa5+ 9. c3 c4
+{ I like this move a lot. Navara took on d4, which may be possible too, but the text move requires much less homework. }
+10. b4 Qd8 11. O-O h6
+{ In the French  (and there is a French pawn structure on the board right now)  , Black usually has to work very hard to get the c8-bishop into the game. Here it's already on f5 ! }
+*
+

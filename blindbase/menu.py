@@ -102,8 +102,7 @@ def _render_main_menu() -> None:
     opts = [
         ("1", "View PGN"),
         ("2", "Opening training"),
-        ("3", "Prepare training"),
-        ("4", "Broadcasts"),
+        ("3", "Broadcasts"),
         ("o", "Settings"),
         ("a", "About"),
         ("q", "Quit"),
@@ -116,6 +115,7 @@ def _render_main_menu() -> None:
     panel = Panel(menu_tbl, title="BlindBase", border_style="green")
     clear_screen_and_prepare_for_new_content()
     _console.print(panel)
+
 
 def _run_main_menu() -> None:
     while True:
@@ -130,19 +130,15 @@ def _run_main_menu() -> None:
         if choice == "o":
             run_settings_menu()
             continue
-        if choice == "4":
+        if choice == "3":
             _launch_broadcasts()
             continue
-        if choice in {"1", "2", "3"}:
+        if choice in {"1", "2"}:
             pgn_path = _select_pgn_file()
             if pgn_path is None:
                 play_sound("click.mp3")
                 continue
-            if choice == "3":
-                from blindbase.commands.pgn import prepare_training
-                prepare_training(pgn_path)
-            else:
-                _launch_pgn(choice, pgn_path)
+            _launch_pgn(choice, pgn_path)
             continue
         _console.print("[red]Invalid choice.[/red]")
         play_sound("decline.mp3")

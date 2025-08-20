@@ -54,6 +54,8 @@ class TrainingView:
             try:
                 while True:
                     self._render()
+                    if self.trainer.is_at_eol():
+                        raise self.ExitRequested(True)
                     board = self.trainer.get_current_board()
                     player_turn = board.turn == (chess.WHITE if self.player_is_white else chess.BLACK)
                     if player_turn:

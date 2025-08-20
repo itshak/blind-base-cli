@@ -204,6 +204,12 @@ class OpeningTrainer(GameNavigator):
 
     #end of __init__()
 
+    def _count_nodes(self, node):
+        count = 1
+        for var in node.variations:
+            count += self._count_nodes(var)
+        return count
+
     def print_all_lines(self, pref='', node=None):
         if node is None:
             node = self._root
@@ -415,17 +421,28 @@ class OpeningTrainer(GameNavigator):
         self.compute_opt_score(node. conf)
     #end of setup_opt_scores()
 
-    def setup_all_scores(self, conf, stat_client, node=None):
+    def setup_all_scores(self, conf, stat_client, node=None, progress_state=None):
         if node is None:
             node = self._root
-        #end of if
+            total_nodes = self._count_nodes(node)
+            from rich.console import Console
+            console = Console()
+            progress_state = {'current': 0, 'total': total_nodes, 'console': console}
+
         for var in node.variations:
-            self.setup_all_scores(conf, stat_client, var)
-        #end of for
-        node.comment = k_unit( conf)
+            self.setup_all_scores(conf, stat_client, var, progress_state)
+
+        node.comment = k_unit(conf)
         self.compute_local_scores(node, self.engine)
         self.compute_stats(node, stat_client)
         self.compute_opt_score(node, conf)
+
+        if progress_state:
+            progress_state['current'] += 1
+            console = progress_state['console']
+            console.print(f"Calculating weights: {progress_state['current']}/{progress_state['total']} positions processed", end='\r')
+            if progress_state['current'] == progress_state['total']:
+                console.print()
 
     #end of setup_all_scores()
 

@@ -112,22 +112,22 @@ def train(file: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     if not gm.games:
         typer.echo("File contains no games", err=True)
         raise typer.Exit(code=1)
-    from blindbase.ui.panels.game_list import GameListPanel
-    # choose game
-    panel = GameListPanel(gm.games, title=f"Select game to train from {file.name}", allow_edit=False)
-    panel.run()
-    if panel.selected_index is None:
-        play_sound("click.mp3")
-        raise typer.Exit()
-    game = gm.games[panel.selected_index]
+
+    # _train.pgn files have only one game, so we select it automatically.
+    game = gm.games[0]
     play_sound("click.mp3")
+
     # choose color
     from rich.prompt import Prompt
     color = Prompt.ask("Train as (w)hite or (b)lack?", choices=["w", "b"], default="w")
     player_is_white = color == "w"
     my_side = "white" if player_is_white else "black"
     trainer = OpeningTrainer(my_side=my_side, inp_fn=train_pgn_path)
-    TrainingView(trainer, player_is_white).run()
+    try:
+        TrainingView(trainer, player_is_white).run()
+    except TrainingView.ExitRequested:
+        pass  # user quit training
+
 
 
 
