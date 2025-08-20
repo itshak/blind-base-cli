@@ -48,6 +48,7 @@ def _pretty_name(key: str) -> str:
 _ENUM_OPTIONS: dict[str, list[Any]] = {
     "ui.move_notation": ["san", "uci", "anna", "nato", "literate"],
     "ui.board_theme": ["default", "high_contrast_light", "high_contrast_dark", "colorblind_red_green"],
+    "ui.color_theme": ["Default", "Highlighted"],
 }
 
 
@@ -141,7 +142,7 @@ def run_settings_menu() -> None:
             play_sound("decline.mp3")
             continue
         # ------------ leaf submenu -            clear_screen_and_prepare_for_new_content()
-        leafs = [ (k, v) for k, v in _collect_leaf_settings() if k.startswith(f"{current_category}.") ]
+        leafs = [ (k, v) for k, v in _collect_leaf_settings() if k.startswith(f"{current_category}.") and k != "ui.theme" ]
         # Build rich table grouped by section
         tbl = Table(show_header=True, header_style=colorize_style("bold magenta"))
         tbl.add_column("#", justify="right", style="cyan")
@@ -191,7 +192,7 @@ def run_settings_menu() -> None:
                 if full_key in _ENUM_OPTIONS:
                     opts = _ENUM_OPTIONS[full_key]
                     console.print(Text(f"Choose {label.lower()}:", style="bold"))
-                    console.print(Panel("".join(f"{i+1}. {opt}" for i, opt in enumerate(opts)), title="Options", border_style="blue"))
+                    console.print(Panel("\n".join(f"{i+1}. {opt}" for i, opt in enumerate(opts)), title="Options", border_style="blue"))
                     sel = input("Select number: ").strip()
                     if sel.isdigit() and 1 <= int(sel) <= len(opts):
                         if _set_setting(full_key, opts[int(sel)-1]):
