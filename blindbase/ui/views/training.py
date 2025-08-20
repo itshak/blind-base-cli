@@ -8,7 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from blindbase.core.settings import settings
-from blindbase.ui.utils import show_help_panel
+from blindbase.ui.utils import show_help_panel, colorize, colorize_style
 from blindbase.ui.board import render_board
 from blindbase.mll_trainer import OpeningTrainer
 from blindbase.utils.board_desc import (
@@ -81,27 +81,27 @@ class TrainingView:
         # Header (same as GameView header)
         white = self.trainer.working_game.headers.get("White", "?")
         black = self.trainer.working_game.headers.get("Black", "?")
-        console.print(Text(f"{white} vs {black}", style="bold yellow"))
+        console.print(Text(f"{white} vs {black}", style=colorize_style("bold yellow")))
         console.print()
         if settings.ui.show_board:
             for row in render_board(board, flipped=self._flip):
                 console.print(row)
         turn_txt = "White" if board.turn else "Black"
         you_or_opp = "your turn" if (board.turn == chess.WHITE) == self.player_is_white else "opponent's turn"
-        console.print(Text("Turn:", style="bold") + Text(f" {turn_txt} ({you_or_opp})", style="yellow"))
+        console.print(Text("Turn:", style=colorize_style("bold")) + Text(f" {turn_txt} ({you_or_opp})", style=colorize_style("yellow")))
         last_move = self._last_move_text(board)
         console.print(last_move)
 
     def _last_move_text(self, board: chess.Board) -> RenderableType:
         if self.trainer.current_node.parent is None:
-            return Text("Last move:", style="bold") + Text(" Initial position", style="yellow")
+            return Text("Last move:", style=colorize_style("bold")) + Text(" Initial position", style=colorize_style("yellow"))
         temp_board = self.trainer.current_node.parent.board()
         move = self.trainer.current_node.move
         from blindbase.utils.move_format import move_to_str
         san = move_to_str(temp_board, move, settings.ui.move_notation)
         move_no = temp_board.fullmove_number if temp_board.turn == chess.BLACK else temp_board.fullmove_number - 1
         prefix = f"{move_no}{'...' if temp_board.turn == chess.BLACK else '.'}"
-        return Text("Last move:", style="bold") + Text(f" {prefix} {san}", style="yellow")
+        return Text("Last move:", style=colorize_style("bold")) + Text(f" {prefix} {san}", style=colorize_style("yellow"))
 
     # ------------------------------------------------------------------
     # Player turn
@@ -120,16 +120,16 @@ class TrainingView:
                 self.trainer.review_my_move(0.1) # lrate
                 return
             else:
-                self._console.print("[red]Incorrect – try again.[/red]")
+                self._console.print(colorize("Incorrect – try again.", "red"))
                 play_sound("incorrect.mp3")
                 attempts += 1
         self.failed_guesses += 1
         correct_move_san = self.trainer.review_my_move(0.1) # lrate
-        self._console.print(f"[yellow]Correct move was {correct_move_san}. Moving on…[/yellow]")
+        self._console.print(colorize(f"Correct move was {correct_move_san}. Moving on…", "yellow"))
 
     def _handle_computer_turn(self) -> None:
         move_san = self.trainer.select_max_loss_move()
-        self._console.print(Text(f"Opponent will play: {move_san}", style="cyan"))
+        self._console.print(Text(f"Opponent will play: {move_san}", style=colorize_style("cyan")))
         play_sound("move-opponent.mp3")
         while True:
             cmd = self._console.input("Enter to continue (h for help): ").strip()

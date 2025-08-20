@@ -14,6 +14,7 @@ from blindbase.ui.base import View
 from blindbase.core.settings import settings
 from blindbase.utils.move_format import move_to_str
 from blindbase.ui.board import render_board
+from blindbase.ui.utils import colorize, colorize_style
 
 __all__ = ["PgnView"]
 
@@ -35,7 +36,7 @@ class PgnView(View):
         title = hdr.get("Event", "PGN Game")
         white = hdr.get("White", "?")
         black = hdr.get("Black", "?")
-        return Text(f"{title} – {white} vs {black}", style="bold")
+        return Text(f"{title} – {white} vs {black}", style=colorize_style("bold"))
 
     def body(self) -> RenderableType:  # noqa: D401
         # ------------------------------------------------------------------
@@ -67,8 +68,8 @@ class PgnView(View):
         board_group = Group(*render_board(board, flipped=self._flipped))
 
         info_lines: list[RenderableType] = []
-        info_lines.append(Text(f"Turn: {turn_str}", style="bold"))
-        info_lines.append(Text("Last move: ") + Text(last_move_text, style="bold yellow"))
+        info_lines.append(Text(f"Turn: {turn_str}", style=colorize_style("bold")))
+        info_lines.append(Text("Last move: ") + Text(last_move_text, style=colorize_style("bold yellow")))
 
         if next_moves:
             nm_text = Text("Next moves:\n")
@@ -81,7 +82,7 @@ class PgnView(View):
         return Group(board_group, Text(), *info_lines)
 
     def footer(self) -> RenderableType:  # noqa: D401
-        return Text("q: quit", style="dim")
+        return Text("q: quit", style=colorize_style("dim"))
 
 
 # ----------------------------------------------------------------------
@@ -96,8 +97,8 @@ def _moves_table(moves_san: Iterable[str], *, highlight_index: int | None = None
         move_no = idx // 2 + 1
         white_mv = moves_san[idx]
         black_mv = moves_san[idx + 1] if idx + 1 < len(moves_san) else ""
-        style_w = "bold yellow" if highlight_index == idx else ""
-        style_b = "bold yellow" if highlight_index == idx + 1 else ""
+        style_w = colorize_style("bold yellow") if highlight_index == idx else ""
+        style_b = colorize_style("bold yellow") if highlight_index == idx + 1 else ""
         tbl.add_row(  # type: ignore[arg-type]
             f"{move_no}.",
             Text(white_mv, style=style_w),

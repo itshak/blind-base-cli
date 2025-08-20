@@ -18,7 +18,7 @@ import chess
 from rich.console import Console, Group, RenderableType
 from rich.text import Text
 
-from blindbase.ui.utils import colorize_style
+from blindbase.ui.utils import colorize_style, colorize
 
 from blindbase.core.navigator import GameNavigator
 from blindbase.ui.board import render_board
@@ -273,14 +273,14 @@ class GameView:
             elo = hdr.get(prefix + "Elo") or ""
             t = Text(name, style=colorize_style("bold yellow"))
             if title and title != "?":
-                t.append(f" [{title}]", style="green")
+                t.append(f" [{title}]", style=colorize_style("green"))
             if elo and elo != "?":
-                t.append(f" ({elo})", style="cyan")
+                t.append(f" ({elo})", style=colorize_style("cyan"))
             return t
         white_t = _player("White", "White")
         black_t = _player("Black", "Black")
         res = hdr.get("Result", "*")
-        players_line = Text.assemble(white_t, Text(" vs "), black_t, Text(f"   {res}", style="bold"))
+        players_line = Text.assemble(white_t, Text(" vs "), black_t, Text(f"   {res}", style=colorize_style("bold")))
         header_lines.append(players_line)
         # Date / ECO line
         date = hdr.get("Date")
@@ -291,7 +291,7 @@ class GameView:
         if eco and eco != "?":
             extra_parts.append(f"ECO {eco}")
         if extra_parts:
-            header_lines.append(Text(" | ".join(extra_parts), style="dim"))
+            header_lines.append(Text(" | ".join(extra_parts), style=colorize_style("dim")))
         for line in header_lines:
             console.print(line)
 
@@ -321,13 +321,13 @@ class GameView:
             console.print()
         # info section
         turn_txt = "White" if board.turn else "Black"
-        console.print(Text("Turn:", style="bold") + Text(f" {turn_txt}", style=colorize_style("yellow")))
+        console.print(Text("Turn:", style=colorize_style("bold")) + Text(f" {turn_txt}", style=colorize_style("yellow")))
         last_move_line = self._last_move_text(board)
         console.print(last_move_line)
         # next moves
         nm_list = self.nav.show_variations()
         if nm_list:
-            console.print(Text("Next moves:", style="bold"))
+            console.print(Text("Next moves:", style=colorize_style("bold")))
             for line in nm_list:
                 console.print(Text(line, style=colorize_style("cyan")))
         else:
@@ -339,7 +339,7 @@ class GameView:
 
     def _last_move_text(self, board: chess.Board) -> RenderableType:
         if self.nav.current_node.parent is None:
-            return Text("Last move:", style="bold") + Text(" Initial position", style=colorize_style("yellow"))
+            return Text("Last move:", style=colorize_style("bold")) + Text(" Initial position", style=colorize_style("yellow"))
         temp_board = self.nav.current_node.parent.board()
         move = self.nav.current_node.move
         try:

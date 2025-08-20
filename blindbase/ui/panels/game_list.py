@@ -15,7 +15,7 @@ from rich.panel import Panel
 from rich.align import Align
 from rich.text import Text
 
-from blindbase.ui.utils import colorize_style
+from blindbase.ui.utils import colorize_style, colorize
 from blindbase.core.settings import settings
 
 __all__ = ["GameListPanel"]
@@ -174,9 +174,9 @@ class GameListPanel:
     def _render_page(self, page: int, total_pages: int) -> None:
         start = page * self.page_size
         end = min(start + self.page_size, len(self.games))
-        page_header = Text(f"Page {page + 1} of {total_pages}", style="bold")
+        page_header = Text(f"Page {page + 1} of {total_pages}", style=colorize_style("bold"))
         tbl = Table(show_lines=False, box=None)
-        tbl.add_column("#", justify="right", style="bold")
+        tbl.add_column("#", justify="right", style=colorize_style("bold"))
         tbl.add_column("White")
         tbl.add_column("Black")
         tbl.add_column("Result", justify="center")
@@ -192,7 +192,7 @@ class GameListPanel:
             event = g.headers.get("Event", "")[:20]
             tbl.add_row(str(idx + 1), white, black, result, date, event)
 
-        panel = Panel(Align.left(tbl), title=self.title, border_style=colorize_style("blue"))
+        panel = Panel(Align.left(tbl), title=colorize(self.title, "bold cyan"), border_style=colorize_style("blue"))
         self._console.clear()
         self._console.print(page_header)
         self._console.print(panel)

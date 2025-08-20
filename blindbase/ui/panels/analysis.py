@@ -118,8 +118,7 @@ class AnalysisPanel:
         tbl.add_column("Score", justify="right")
         tbl.add_column("Engine line")
         if not pv_list:
-            if not pv_list:
-            return Panel(Align.center("[cyan]Waiting for engine…"), title="Engine", border_style="green")
+            return Panel(Align.center(colorize("Waiting for engine…", "cyan")), title=colorize("Engine", "bold cyan"), border_style=colorize_style("green"))
         for idx, (pv_moves, sc) in enumerate(zip(pv_list, scores), 1):
             b = self.board.copy()
             san_parts = []
@@ -142,4 +141,4 @@ class AnalysisPanel:
             tbl.add_row(str(idx), score_str, san_line)
         header = f"{getattr(self, 'engine_name', 'Engine')}  Depth: {self._current_depth}  Lines: {self.lines}"
         instruction = Align.center(colorize("Press Enter to show command prompt", "dim"))
-        return Panel(Group(instruction, tbl), title=header, border_style=colorize_style("green"))
+        return Panel(Group(instruction, tbl), title=colorize(header, "bold cyan"), border_style=colorize_style("green"))

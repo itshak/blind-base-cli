@@ -86,7 +86,7 @@ def _list_broadcasts() -> list[dict[str, Any]]:
     return bcs
 
 
-from blindbase.ui.utils import show_help_panel, clear_screen_and_prepare_for_new_content
+from blindbase.ui.utils import show_help_panel, clear_screen_and_prepare_for_new_content, colorize, colorize_style
 
 def _choose_from_table(
     rows: list[tuple[str, ...]],
@@ -101,13 +101,13 @@ def _choose_from_table(
         return None
     def _render_table() -> None:
         _console.clear()
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("#", justify="right", style="cyan")
+        table = Table(show_header=True, header_style=colorize_style("bold magenta"))
+        table.add_column("#", justify="right", style=colorize_style("cyan"))
         for head in headers:
             table.add_column(head)
         for idx, row in enumerate(rows, 1):
             table.add_row(str(idx), *row)
-        _console.print(Panel(table, title=title, border_style="green"))
+        _console.print(Panel(table, title=colorize(title, "bold cyan"), border_style=colorize_style("green")))
 
     _render_table()
 
