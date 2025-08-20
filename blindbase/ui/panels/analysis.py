@@ -15,6 +15,7 @@ from rich.table import Table
 from rich.text import Text
 
 from blindbase.core.engine import Engine
+from blindbase.ui.utils import colorize, colorize_style
 
 
 class AnalysisPanel:

@@ -265,7 +265,7 @@ class GameView:
             if v and v != "?":
                 evt_parts.append(v)
         if evt_parts:
-            header_lines.append(Text(" – ".join(evt_parts), style="bold magenta"))
+            header_lines.append(Text(" – ".join(evt_parts), style=colorize_style("bold magenta")))
         # Players + result line
         def _player(prefix: str, name_key: str) -> Text:
             name = hdr.get(name_key, "?")
